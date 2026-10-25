@@ -1,0 +1,329 @@
+<!doctype html>
+<!--
+  FUNCTION FIGHTER
+  Einzelspieler: index.html einfach im Browser öffnen (Doppelklick).
+  Multiplayer:   start.bat doppelklicken und den angezeigten Link öffnen.
+  Für die schöne Formeldarstellung (MathJax) und die Pixel-Schrift
+  wird eine Internetverbindung benötigt – das Spiel selbst läuft auch ohne.
+-->
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Function Fighter</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- MathJax: nur für die Darstellung der Formeln -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js"></script>
+
+  <script defer src="script.js"></script>
+  <script defer src="catalog.js"></script>
+  <script defer src="multiplayer.js"></script>
+</head>
+<body>
+
+  <header class="topbar">
+    <h1 class="logo">FUNCTION<span>FIGHTER</span></h1>
+    <label class="name-field" title="Dein Name – erscheint über deiner Figur und im Multiplayer">
+      <span class="sym">👤</span>
+      <input id="player-name" maxlength="16" placeholder="Dein Name" autocomplete="nickname" spellcheck="false">
+    </label>
+    <nav class="tabs" id="level-select" aria-label="Spielmodus"></nav>
+    <div class="topbar-actions">
+      <button class="btn" id="settings-btn" title="Einstellungen"><span class="sym">⚙</span></button>
+      <button class="btn" id="newmap-btn" title="Neue zufällige Karte"><span class="sym">🎲</span> Neue Karte</button>
+      <button class="btn" id="restart-btn" title="Dieselbe Karte noch einmal"><span class="sym">↻</span> Neustart</button>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <!-- Spielwelt + Eingabe darunter -->
+    <section class="play">
+      <div class="stage" id="stage">
+        <canvas id="game" aria-label="Koordinatensystem mit Spielern und Gegnern"></canvas>
+
+        <div class="overlay" id="overlay" hidden>
+          <div class="overlay-box">
+            <h2 id="overlay-title"></h2>
+            <p id="overlay-text"></p>
+            <div class="overlay-buttons">
+              <button class="btn" id="overlay-retry"><span class="sym">↻</span> Nochmal</button>
+              <button class="btn" id="overlay-newmap"><span class="sym">🎲</span> Neue Karte</button>
+              <button class="btn btn-primary" id="overlay-next">Weiter <span class="sym">▶</span></button>
+              <button class="btn btn-primary" id="overlay-lobby" hidden>Zur Lobby</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="fire-bar" id="fire-bar">
+        <button class="btn btn-catalog" id="catalog-btn" title="Funktionsliste öffnen" hidden><span class="sym">📈</span> Funktionen</button>
+        <button class="btn btn-keypad" id="keypad-btn" title="Mathe-Tasten ein/aus"><span class="sym">⌨</span></button>
+        <div class="fx-field">
+          <select class="fx" id="fx-mode" title="Modus: Funktion oder (Profi) Differentialgleichung wie bei Graphwar">
+            <option value="y">f(x) =</option>
+            <option value="y1">y′ =</option>
+            <option value="y2">y″ =</option>
+          </select>
+          <input id="fx-input" type="text" maxlength="120" placeholder="z. B. x/2" aria-label="Funktion"
+                 autocomplete="off" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="ode-controls" id="ode-controls" hidden>
+          <label>Richtung <select id="ode-dir"><option value="1">→ rechts</option><option value="-1">← links</option></select></label>
+          <label id="ode-angle-box">Startwinkel <input id="ode-angle" type="number" value="30" min="-85" max="85" step="5">°</label>
+        </div>
+        <div class="preview" id="preview" aria-live="polite"></div>
+        <button class="btn btn-fire" id="fire-btn"><span class="sym">▶</span> FEUER!</button>
+      </div>
+      <!-- Mathe-Tasten (fügen an der Cursor-Stelle ein) -->
+      <div class="keypad" id="keypad" data-mode="y" hidden>
+        <button type="button" data-ins="x">x</button>
+        <button type="button" data-ins="y" class="ode-key">y</button>
+        <button type="button" data-ins="y'" class="ode2-key">y′</button>
+        <button type="button" data-ins="^2">x²</button>
+        <button type="button" data-ins="^(|)">xⁿ</button>
+        <button type="button" data-ins="/">÷</button>
+        <button type="button" data-ins="sqrt(|)">√</button>
+        <button type="button" data-ins="sin(|)">sin</button>
+        <button type="button" data-ins="cos(|)">cos</button>
+        <button type="button" data-ins="tan(|)">tan</button>
+        <button type="button" data-ins="e^(|)">eˣ</button>
+        <button type="button" data-ins="pi">π</button>
+        <button type="button" data-ins="abs(|)">|x|</button>
+        <button type="button" data-ins="(|)">( )</button>
+        <button type="button" data-ins="+">+</button>
+        <button type="button" data-ins="-">−</button>
+        <button type="button" data-ins="*">·</button>
+        <button type="button" data-key="back" title="Zeichen löschen">⌫</button>
+        <button type="button" data-key="clear" title="Alles löschen">C</button>
+      </div>
+      <div class="bar-info">
+        <span class="parse-status" id="parse-status"></span>
+        <span class="message" id="message"></span>
+      </div>
+    </section>
+
+    <!-- Seitenleiste -->
+    <aside class="sidebar" id="sidebar">
+
+      <div class="card level-card" id="level-card">
+        <div class="level-num" id="level-num">LEVEL 1</div>
+        <h2 id="level-name"></h2>
+        <p id="level-task"></p>
+        <p class="warning" id="level-warning" hidden></p>
+        <details class="hint" id="hint-box">
+          <summary>Tipp anzeigen</summary>
+          <p id="level-hint"></p>
+        </details>
+        <div class="card-actions" id="tutorial-nav" hidden>
+          <button class="btn btn-primary" id="tutorial-next">Weiter ▶</button>
+          <button class="btn btn-small" id="tutorial-skip">Tutorial beenden</button>
+        </div>
+        <button class="btn btn-small walls-toggle" id="walls-toggle" hidden>🧱 Wände: AN</button>
+        <div class="map-code" id="map-code" hidden>
+          <span>Karten-Code</span><code id="map-code-text"></code>
+          <button class="btn btn-small" id="map-code-copy">Kopieren</button>
+          <button class="btn btn-small" id="map-code-edit" hidden>✎ Bearbeiten</button>
+        </div>
+        <div class="editor-tools" id="editor-tools" hidden>
+          <div class="tool-row" id="editor-palette">
+            <button type="button" class="tool" data-tool="wall">🧱 Wand</button>
+            <button type="button" class="tool" data-tool="1">● Gegner 1</button>
+            <button type="button" class="tool" data-tool="2">● Gegner 2</button>
+            <button type="button" class="tool" data-tool="3">● Gegner 3</button>
+            <button type="button" class="tool" data-tool="player">🙂 Spieler</button>
+            <button type="button" class="tool" data-tool="erase">⌫ Radierer</button>
+          </div>
+          <label class="editor-shots">Angriffe <input type="number" id="editor-shots" min="1" max="30" value="5"></label>
+          <div class="card-actions">
+            <button class="btn btn-primary btn-small" id="editor-test">▶ Testen</button>
+            <button class="btn btn-small" id="editor-copy">Code kopieren</button>
+            <button class="btn btn-small" id="editor-clear">Leeren</button>
+          </div>
+          <div class="editor-load">
+            <input id="editor-code" placeholder="Karten-Code einfügen (K1-…)" autocomplete="off" spellcheck="false">
+            <button class="btn btn-small" id="editor-load">Laden</button>
+          </div>
+          <p class="warning" id="editor-error"></p>
+        </div>
+      </div>
+
+      <div class="card status">
+        <div class="status-row">
+          <div class="status-item">
+            <span class="label">Gegner</span>
+            <span class="value" id="enemy-count">0</span>
+          </div>
+          <div class="status-item">
+            <span class="label" id="shot-label">Angriffe</span>
+            <span class="value" id="shot-count">0</span>
+            <div class="pips" id="shot-pips"></div>
+            <span class="record" id="shot-sub"></span>
+          </div>
+          <div class="status-item" id="score-item" hidden>
+            <span class="label">Punkte</span>
+            <span class="value" id="score">0</span>
+            <span class="record" id="best-combo"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multiplayer: wer bin ich, wer ist dran, Leben aller Spieler -->
+      <div class="card mp-card" id="mp-card">
+        <div id="mp-card-head"></div>
+        <div class="mp-status" id="mp-status"></div>
+        <div id="mp-card-body"></div>
+        <div class="card-actions">
+          <button class="btn btn-small" id="mp-lobby-btn">Lobby</button>
+          <button class="btn btn-small" id="mp-leave-btn">Verlassen</button>
+        </div>
+      </div>
+
+      <!-- Funktionsliste (Tutorial, Sandkasten, Multiplayer wenn erlaubt) -->
+      <div class="card catalog-card" id="catalog-card" hidden>
+        <div class="catalog-head">
+          <h2>FUNKTIONEN</h2>
+          <button class="btn btn-small" id="catalog-close" title="Schließen">✕</button>
+        </div>
+        <p class="small">Parameter ändern, dann kopieren, einsetzen oder direkt feuern.
+          Der Graph zeigt die Kurve von dir aus – kräftig ist der Teil, der geschossen wird.</p>
+        <div class="catalog-list" id="catalog-list"></div>
+      </div>
+
+    </aside>
+  </main>
+
+  <!-- Level-Auswahl -->
+  <dialog class="settings level-dialog" id="level-dialog">
+    <form method="dialog">
+      <h2>LEVEL AUSWÄHLEN</h2>
+      <div class="level-grid" id="level-grid"></div>
+      <div class="level-extra">
+        <div class="mp-box">
+          <h3>📅 Tages-Herausforderung</h3>
+          <p class="small">Heute für alle dieselbe Karte. <span id="daily-best"></span></p>
+          <button type="button" class="btn btn-primary btn-small" id="daily-btn">Spielen</button>
+        </div>
+        <div class="mp-box">
+          <h3>✎ Level-Editor</h3>
+          <p class="small">Eigene Karte bauen, testen und als Code teilen.</p>
+          <button type="button" class="btn btn-small" id="editor-btn">Editor öffnen</button>
+        </div>
+        <div class="mp-box">
+          <h3>🔑 Karten-Code</h3>
+          <input id="code-input" class="code-input" placeholder="z. B. L3-1A2B3C" autocomplete="off" spellcheck="false">
+          <button type="button" class="btn btn-small" id="code-load">Laden</button>
+        </div>
+      </div>
+      <p class="warning" id="code-error"></p>
+      <button class="btn">Schließen</button>
+    </form>
+  </dialog>
+
+  <!-- Info: So funktioniert das Spiel -->
+  <dialog class="settings info-dialog" id="info-dialog">
+    <form method="dialog">
+      <h2>INFO</h2>
+      <p class="rule"><b>Dein eigenes Koordinatensystem:</b> Die Achsen gehen durch dich – du bist immer
+        der Ursprung (0 | 0), alle Zahlen zählen von dir aus. Deine Funktion wird von dir aus gezeichnet
+        und so nach oben oder unten verschoben, dass sie durch dich geht: y = f(x) − f(0).</p>
+      <ul class="rules attack-rules">
+        <li><b>Von dir aus:</b> <code>x^2</code> hat seinen Scheitel bei dir, <code>1/(x-3)</code> seine
+          Lücke 3 rechts von dir. Ein <code>+b</code> ändert nichts, es fällt beim Verschieben weg.</li>
+        <li><b>Bei dir definiert:</b> f braucht bei x = 0 einen Wert. <code>1/x</code> geht deshalb nicht –
+          nimm z. B. <code>1/(x+1)</code>.</li>
+        <li><b>Richtung:</b> <code>x/6</code> fliegt nach rechts. Steht direkt vor jedem x ein Minus
+          (<code>(-x)/6</code>, <code>-x</code>, <code>sin(-x)</code>), fliegt der Schuss nach links.
+          Fallend nach rechts: <code>-2x</code> oder <code>-(x/6)</code>.</li>
+        <li><b>Treffer:</b> Die Kurve fliegt durch Gegner hindurch und trifft jeden, den sie berührt.</li>
+        <li><b>Ende:</b> Der Schuss fliegt, bis er eine Wand trifft (sind Wände zerstörbar, sprengt er dort ein Loch hinein),
+          das Feld verlässt, an eine Sprungstelle kommt oder die Funktion nicht mehr definiert ist.</li>
+      </ul>
+      <p class="small">Klicke auf ein Beispiel, um es ins Eingabefeld zu übernehmen.</p>
+      <div class="examples">
+        <div class="ex-head"><span>Mathematisch</span><span>Eingabe</span></div>
+        <button type="button" class="example" data-input="x^2"><span>\(x^2\)</span><code>x^2</code></button>
+        <button type="button" class="example" data-input="x^2/3"><span>\(\frac{x^2}{3}\)</span><code>x^2/3</code></button>
+        <button type="button" class="example" data-input="sqrt(x)"><span>\(\sqrt{x}\)</span><code>sqrt(x)</code></button>
+        <button type="button" class="example" data-input="1/(x+1)"><span>\(\frac{1}{x+1}\)</span><code>1/(x+1)</code></button>
+        <button type="button" class="example" data-input="e^x"><span>\(e^x\)</span><code>e^x</code></button>
+        <button type="button" class="example" data-input="(-x)/6"><span>\(\frac{-x}{6}\)</span><code>(-x)/6</code></button>
+        <button type="button" class="example" data-input="cos(x/2)"><span>\(\cos\left(\frac{x}{2}\right)\)</span><code>cos(x/2)</code></button>
+        <button type="button" class="example" data-input="1/(x-4)"><span>\(\frac{1}{x-4}\)</span><code>1/(x-4)</code></button>
+        <button type="button" class="example" data-input="sqrt(abs(x))"><span>\(\sqrt{|x|}\)</span><code>sqrt(abs(x))</code></button>
+        <button type="button" class="example" data-input="sin(x)"><span>\(\sin(x)\)</span><code>sin(x)</code></button>
+        <button type="button" class="example" data-input="x^2+2x+1"><span>\(x^2+2x+1\)</span><code>x^2+2x+1</code></button>
+      </div>
+      <ul class="rules">
+        <li><b>Schreibweise wie bei Graphwar:</b> tippen wie beim Taschenrechner, z. B. <code>x^2/3</code>,
+          <code>sqrt(x)</code>, <code>sin(x/2)</code>.</li>
+        <li><b>Potenzen</b> mit <code>^</code>: <code>x^2</code>, <code>e^-x</code>. Längere Exponenten in Klammern: <code>x^(2x+1)</code></li>
+        <li><b>Brüche</b> mit <code>/</code>: <code>x/3</code>, <code>(x+1)/3</code>, <code>1/(x-2)</code>
+          (<code>frac(Zähler;Nenner)</code> und LaTeX gehen auch).</li>
+        <li><b>Wurzeln</b>: <code>sqrt(3x)</code>, n-te Wurzel: <code>sqrt[3](x)</code></li>
+        <li><b>sin und cos</b>: Die Zahl vor x ist höchstens 4 – <code>sin(4x)</code> geht, <code>sin(5x)</code> nicht.</li>
+        <li><b>Verlauf:</b> Mit <code>↑</code> / <code>↓</code> im Eingabefeld holst du frühere Funktionen zurück.
+          <b>⌨</b> blendet Mathe-Tasten ein (gut fürs Tablet).</li>
+        <li><b>Profi-Modi wie bei Graphwar</b> (links neben dem Eingabefeld umstellen):
+          <code>y′ = …</code> – du gibst die Steigung an, z. B. <code>-y/4+1</code> (biegt sich ein) oder <code>x/5</code> (Parabel).
+          <code>y″ = …</code> – du gibst die Krümmung an und wählst einen Startwinkel, z. B. <code>-y/9</code> (Schwingung).
+          Erlaubt sind <code>x</code>, <code>y</code> und bei y″ auch <code>y'</code>. Die Richtung wählst du daneben.</li>
+        <li><b>Karten-Code</b> rechts unter der Aufgabe: Damit spielt jemand genau dieselbe Karte nach (Level-Fenster → Karten-Code).</li>
+        <li><b>Mal-Zeichen</b> darf fehlen: <code>2x</code>, <code>3sin(x)</code> · <b>Betrag</b>: <code>abs(x)</code> oder <code>|x|</code></li>
+        <li><b>Definitionsbereich</b>: <code>sqrt(x)</code> gibt es nur rechts von dir. Nach links:
+          <code>sqrt(-x)</code>, in beide Richtungen: <code>sqrt(abs(x))</code>.</li>
+        <li><b>Nicht im Spiel:</b> Logarithmen (<code>ln</code>, <code>log</code>, <code>lg</code>) und
+          <code>arcsin</code>, <code>arccos</code>, <code>arctan</code>.</li>
+        <li><b>Multiplayer:</b> <code>start.bat</code> doppelklicken, den Link aus dem Fenster auf allen PCs öffnen,
+          dann unter „Multiplayer“ eine Lobby erstellen oder mit Code beitreten.</li>
+        <li>Alle Funktionen ausführlich: <code>FUNKTIONEN.md</code></li>
+      </ul>
+      <button class="btn btn-primary">Schließen</button>
+    </form>
+  </dialog>
+
+  <!-- Multiplayer: Lobby erstellen / beitreten / Warteraum (Inhalt baut multiplayer.js) -->
+  <dialog class="settings mp-dialog" id="mp-dialog">
+    <div id="mp-dialog-body"></div>
+  </dialog>
+
+  <!-- Einstellungen -->
+  <dialog class="settings" id="settings">
+    <form method="dialog">
+      <h2>EINSTELLUNGEN</h2>
+      <fieldset class="endless-settings">
+        <legend>Wände</legend>
+        <label class="toggle"><input type="checkbox" id="walls-breakable" checked> Wände zerstörbar – ein Treffer sprengt ein Loch hinein</label>
+        <label class="toggle"><input type="checkbox" id="endless-walls" checked> Wände im Endlos-Modus</label>
+        <p class="small">Gilt für Tutorial, Level, Endlos und Sandkasten. Im Multiplayer stellt das der Host in der Lobby ein.</p>
+      </fieldset>
+      <p class="small">Erlaubte Funktionen. Abgeschaltete Funktionen können nicht abgefeuert werden.
+        Lineare Funktionen wie \(2x+1\) sind immer erlaubt. Gilt für alle Modi
+        und wird automatisch gespeichert. Alle Funktionen erklärt: <code>FUNKTIONEN.md</code></p>
+      <div class="settings-actions">
+        <button type="button" class="btn" id="all-on">Alle an</button>
+        <button type="button" class="btn" id="all-off">Alle aus</button>
+      </div>
+      <div class="toggles" id="type-toggles"></div>
+      <details class="matrix-box">
+        <summary>Aktuelle Karte als Matrix</summary>
+        <p class="small">0 = leer · 1–3 = Gegner mit so vielen Lebenspunkten · 4 = Wand · 5 = Spieler (2×2-Block um sein Kreuz)</p>
+        <pre id="map-matrix"></pre>
+      </details>
+      <button class="btn btn-primary">Fertig</button>
+    </form>
+  </dialog>
+
+</body>
+</html>
