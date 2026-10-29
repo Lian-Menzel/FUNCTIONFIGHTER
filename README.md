@@ -159,21 +159,24 @@ Host sie in der Lobby erlaubt. In den Leveln und im Endlos-Modus gibt es sie nic
 
 | Einstellung | Möglichkeiten |
 |---|---|
-| Feuern | **Runden:** nacheinander, jeder hat eine **Bedenkzeit** (10/20/30/45/60 s). Wer nicht feuert, verliert den Zug. **Echtzeit:** alle gleichzeitig, jeder darf **alle 2, 3 oder 5 Sekunden** feuern – wer schneller ist, hat Glück. |
-| Wände | keine, wenig, mittel, viel |
+| Feuern | **Echtzeit** (Standard, alle 3 s): alle gleichzeitig, jeder darf **alle 2, 3 oder 5 Sekunden** feuern – wer schneller ist, hat Glück. **Runden:** nacheinander, jeder hat eine **Bedenkzeit** (10/20/30/45/60 s). Wer nicht feuert, verliert den Zug. |
+| Wände | keine, wenig, mittel (Standard), viel – Mauerstücke (2–5 lang), Türme (2×2) und Ecken. Um jeden Startplatz bleiben 3 Kästchen frei. |
 | Wände zerstörbar | an (Standard): ein Treffer sprengt ein Loch in die Wand. Aus: Wände bleiben stehen. |
 | Funktionsliste | erlaubt oder nicht |
-| Faire Welt | an (Standard): Wände und Startplätze werden gespiegelt – bei 2 Spielern an der y-Achse, bei 3–4 an beiden Achsen. Weil sich jeder links sieht, hat so jeder in seiner Ansicht dieselbe Umgebung. Aus: alles zufällig. |
+| Faire Welt | an (Standard): Die Wände werden gespiegelt – bei 2 Spielern an der y-Achse, bei 3–4 an beiden Achsen. Weil sich jeder links sieht, hat so jeder in seiner Ansicht dieselbe Umgebung. Die Startplätze sind immer zufällig in der eigenen Hälfte bzw. im eigenen Viertel. Aus: auch die Wände zufällig. |
 | 2 gegen 2 | Teams (nur mit 4 Spielern): Team Links (Spieler 1 + 3) gegen Team Rechts (Spieler 2 + 4). Teamkollegen kann man nicht treffen; gewonnen hat das Team, das als letztes noch jemanden hat. |
-| Power-ups | an (Standard): Auf dem Feld liegen ♥ **+1 Leben**, 🛡 **Schild** (hält einen Treffer ab) und ×2 **Doppelschuss** (der nächste Schuss kostet 2 Leben). Eingesammelt wird, wenn die eigene Kurve sie berührt – wer zuerst da ist. Alle 15 s kommen neue (in der fairen Welt gespiegelt). |
+| Power-ups | an (Standard): Auf dem Feld liegen ♥ **+1 Leben**, 🛡 **Schutzzauber** (hält einen Treffer ab, grauer Ring ums Manaschild) und ×2 **Doppelschuss** (der nächste Schuss kostet 2 Leben). Eingesammelt wird, wenn die eigene Kurve sie berührt – wer zuerst da ist. Alle 15 s kommen neue (in der fairen Welt gespiegelt). |
 | Profi-Modi | y′ und y″ erlaubt oder nicht |
 
 **Spielablauf:** Zu Beginn wird eine zufällige Welt mit Wänden erzeugt. Bei 2 Spielern steht
 Spieler 1 in der linken und Spieler 2 in der rechten Hälfte, bei 3–4 Spielern hat jeder ein
-Viertel (1 oben links, 2 oben rechts, 3 unten links, 4 unten rechts). Jeder hat **3 Leben**.
-Wird ein Spieler von einem anderen getroffen, verliert er ein Leben, **wird kleiner** und
-**springt an eine andere Stelle in seiner Hälfte bzw. seinem Viertel**. Wer alle Leben
-verliert, ist raus; der Letzte gewinnt. Danach kann der Host eine neue Runde starten.
+Viertel (1 oben links, 2 oben rechts, 3 unten links, 4 unten rechts), jeweils an einer zufälligen
+Stelle. Jeder Zauberer steht in einem **Manaschild** – das ist seine Trefferfläche (ein fester
+Kreis um den Körper; die Kurve startet weiter an der Kugel auf seinem Stab). Jeder hat **3 Leben**:
+Wird ein Spieler getroffen, verliert er ein Leben und **springt an eine andere Stelle in seiner
+Hälfte bzw. seinem Viertel** – das Manaschild bleibt gleich groß. Nach dem 1. Treffer bekommt es
+Risse, nach dem 2. zerbricht es (man sieht nur noch den gepunkteten Umriss), beim 3. Treffer ist
+man raus. Der Letzte gewinnt. Danach kann der Host eine neue Runde starten.
 Ist im Runden-Modus jemand nicht verbunden, wird sein Zug nach 3 Sekunden übersprungen.
 Rechts im Verlauf steht, wer welche Funktion abgefeuert und wen getroffen hat. Den Namen kann
 man jederzeit oben ändern – alle sehen den neuen Namen sofort.
@@ -235,7 +238,8 @@ per `winget install Python.Python.3.12`.
 | Funktionsliste (Einträge, Parameter) | `catalog.js` – `CATALOG` |
 | Multiplayer im Browser (Lobby-Fenster, Anzeige, Feuern) | `multiplayer.js` |
 | Multiplayer-Server (Lobbys, Wanddichte, Bereiche, Leben, Bedenkzeit) | `server.py` – Abschnitt 1 (`WALL_PIECES`, `HALVES`, `QUADRANTS`, `START_LIVES`, `ALLOWED_SETTINGS`, `OFFLINE_SKIP`) |
-| Faire Welt (Spiegelung von Wänden und Startplätzen) | `server.py` – `mirror_cells`, `make_walls`, `start_game` |
+| Faire Welt (Spiegelung der Wände), Wandformen | `server.py` – `mirror_cells`, `wall_shape`, `make_walls`, `start_game` |
+| Manaschild (Trefferfläche, Aussehen), Größe des Zauberers | `multiplayer.js` – `MP_SHIELD_RADIUS`, `mpShieldCenter`, `mpShieldSprite`; `script.js` – `WIZARD_SPRITE`, `WIZARD_HEIGHT`, `WIZARD_BODY` |
 | Farben, Schriften, Muster (Stein, Holz, Pergament, Nieten), Layout der Oberfläche | `style.css` – Variablen in `:root` |
 | Holzrahmen ums Spielfeld | `style.css` – `.frame`, `#game`; `script.js` – `FRAME`, `fitCanvas` |
 | Pixel-Grafik des Spielfelds (Pergament, Farben, Zauberer, Schleime, Mauern, Icons) | `script.js`, Abschnitt 7 – `COLORS`, `drawGrid`, `WIZARD_SPRITE`, `slimeSprite`, `drawWalls`, `ICONS` |

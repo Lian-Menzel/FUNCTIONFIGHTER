@@ -2198,6 +2198,7 @@ const COLORS = {
   skin: '#f6c8a0',
   beard: '#ffffff',
   beardDark: '#d9d2e0',
+  staff: '#7a4a2a',
 };
 
 const TEXT_SIZE = 56 / 3;   // Jersey 10 ist auf einem Raster gezeichnet: 1 Schrift-Pixel = 1/18,667 der Schriftgröße
@@ -2291,46 +2292,58 @@ function pixelPanel(x, y, w, h, background, border = COLORS.ink, b = pix.T * 2) 
 
 /* ---------- Figuren ---------- */
 
-// Zauberer (schaut nach rechts). Er hält die Zauberkugel – ihre Mitte ist der Nullpunkt (0 | 0),
-// dort beginnt jede Kurve. Zeichen: o Umriss, h/d Hut, g/G Goldband, s Haut, e Auge,
-// w/v Bart, r/R Gewand, * + k Zauberkugel
+// Zauberer (schaut nach rechts) mit Stab, oben auf dem Stab die Zauberkugel – ihre Mitte ist der
+// Nullpunkt (0 | 0), dort beginnt jede Kurve. Zeichen: o Umriss, h/d Hut, g/G Goldband, s Haut,
+// e Auge, w/v Bart, r/R Gewand, t Stab, * + Zauberkugel
 const WIZARD_SPRITE = [
-  '....oo...........',
-  '...ohdo..........',
-  '...ohhdo.........',
-  '....ohhdo........',
-  '....ohhhdo.......',
-  '...ohhhhhdo......',
-  '..oggggggGGo.....',
-  '.oohhhhhhhhoo....',
-  '...osssssesoooo..',
-  '...owssssswoo++o.',
-  '..orwwwwwwss+***o',
-  '..orrwwwwvRo****o',
-  '.orrrrwvvRRoo*ko.',
-  '.orrrrrrRRRRooo..',
-  '.orrrrrrrRRRo....',
-  '..oooooooooo.....',
+  '...oo........',
+  '..ohdo.......',
+  '..ohhdo...oo.',
+  '.ohhhhdo.o+*o',
+  'oggggGGGoo**o',
+  '.osssesoo.oo.',
+  '.owwwwwo..t..',
+  'orwwwvRo..t..',
+  'orrwvRRoost..',
+  'orrrrRRRo.t..',
+  'orrrrrRRo.t..',
+  '.orrrrRRo.t..',
+  '..oooooo..t..',
 ];
-const WIZARD_ANCHOR = { x: 14, y: 11 };   // Kunst-Pixel-Ecke in der Mitte der Kugel
+const WIZARD_ANCHOR = { x: 11, y: 4 };   // Sprite-Pixel-Ecke in der Mitte der Kugel
+const WIZARD_HEIGHT = 1.05;              // so hoch ist der Zauberer in Koordinaten-Einheiten (bei jeder Feldgröße)
+// Mitte des Zauberers relativ zur Kugel in Einheiten (eigenes x: der Körper steht hinter dem Stab,
+// y nach oben) – dort sitzt im Multiplayer sein Manaschild
+const WIZARD_BODY = {
+  x: (WIZARD_SPRITE[0].length / 2 - WIZARD_ANCHOR.x) * WIZARD_HEIGHT / WIZARD_SPRITE.length,
+  y: -(WIZARD_SPRITE.length / 2 - WIZARD_ANCHOR.y) * WIZARD_HEIGHT / WIZARD_SPRITE.length,
+};
 
 // color/dark: Gewand und Hut, orb: Farbe der Zauberkugel (= Farbe der Kurve)
 function wizardSprite(color, dark, orb, flip) {
   return spriteFromRows(`wiz|${color}|${orb}`, WIZARD_SPRITE, {
     o: COLORS.ink, h: color, d: dark, r: color, R: dark, g: COLORS.gold, G: COLORS.goldDark,
-    s: COLORS.skin, e: COLORS.ink, w: COLORS.beard, v: COLORS.beardDark,
-    '*': orb, '+': '#ffffff', k: dark,
+    s: COLORS.skin, e: COLORS.ink, w: COLORS.beard, v: COLORS.beardDark, t: COLORS.staff,
+    '*': orb, '+': '#ffffff',
   }, flip);
 }
 
-// Zauberer mit der Kugel auf der Kunst-Pixel-Ecke (oi, oj); face = 1 schaut nach rechts, −1 nach links.
-// Gibt die obere und untere Kante zurück (für Namen darüber).
-function drawWizard(oi, oj, color, dark, orb, face = 1) {
+// Bildschirmpixel pro Sprite-Pixel des Zauberers: ganzzahlig (scharf), so gewählt, dass er etwa
+// WIZARD_HEIGHT Einheiten hoch ist – unabhängig von der Kunst-Pixel-Größe des Feldes
+function wizardPixel() {
+  return Math.max(1, Math.round(WIZARD_HEIGHT * pix.U / WIZARD_SPRITE.length));
+}
+
+// Zauberer mit der Kugel auf dem Bildschirmpixel (x, y); face = 1 schaut nach rechts, −1 nach links.
+// Gibt die obere und untere Kante in Bildschirmpixeln zurück (für Namen darüber).
+function drawWizard(x, y, color, dark, orb, face = 1) {
   const sprite = wizardSprite(color, dark, orb, face < 0);
+  const P = wizardPixel();
   const ax = face < 0 ? sprite.width - WIZARD_ANCHOR.x : WIZARD_ANCHOR.x;
-  const top = oj - WIZARD_ANCHOR.y;
-  blit(sprite, oi - ax, top);
-  return { top, bottom: top + sprite.height };
+  const left = Math.round(x) - ax * P;
+  const top = Math.round(y) - WIZARD_ANCHOR.y * P;
+  ctx.drawImage(sprite, left, top, sprite.width * P, sprite.height * P);
+  return { top, bottom: top + sprite.height * P };
 }
 
 // Schleim als Pixel-Kreis mit Radius R Kunst-Pixeln – genau so groß wie seine Trefferfläche.
@@ -2728,13 +2741,15 @@ function drawEnemies() {
   }
 }
 
+// Welt-Punkt → Bildschirmpixel auf dem Canvas (dort, wo auch die Kurven beginnen)
+function screenX(x) { return Math.round(artX(x) * pix.K); }
+function screenY(y) { return Math.round(artY(y) * pix.K); }
+
 function drawPlayer() {
-  const oi = Math.round(artX(state.player.x));
-  const oj = Math.round(artY(state.player.y));
   // Richtung, in die der letzte/aktuelle Angriff aus dem Spieler herausging – dorthin schaut der Zauberer
   const shot = state.shot || state.trails[state.trails.length - 1];
   const face = shot && shot.arms[0] && shot.arms[0].dir < 0 ? -1 : 1;
-  drawWizard(oi, oj, COLORS.player, COLORS.playerDark, COLORS.curve, face);
+  drawWizard(screenX(state.player.x), screenY(state.player.y), COLORS.player, COLORS.playerDark, COLORS.curve, face);
 }
 
 // Funken als Kunst-Pixel (Position in logischen Canvas-Pixeln, siehe spawnParticles)

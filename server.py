@@ -53,23 +53,24 @@ LOG_LENGTH = 12                    # so viele Einträge merkt sich der Verlauf
 
 # Power-ups: werden eingesammelt, wenn die eigene Kurve sie berührt
 POWERUP_KINDS = ('life', 'shield', 'double')   # +1 Leben, Schild gegen den nächsten Treffer, nächster Schuss doppelt
-POWERUP_NAMES = {'life': '+1 Leben', 'shield': 'Schild', 'double': 'Doppelschuss'}
+POWERUP_NAMES = {'life': '+1 Leben', 'shield': 'Schutzzauber', 'double': 'Doppelschuss'}
 POWERUP_EVERY = 15                 # alle so viele Sekunden erscheinen neue
 POWERUP_MAX = 4                    # höchstens so viele liegen gleichzeitig auf dem Feld
 SHOT_LABELS = ('f(x) = ', "y' = ", "y'' = ")   # Modus des Schusses (für den Verlauf)
 
 PLAYER_COLORS = [('#2f6fdb', 'Blau'), ('#d64545', 'Rot'), ('#2e9e6a', 'Grün'), ('#e08a1a', 'Orange')]
 
-# Wanddichte: so viele Wandstücke (je 1–4 Kästchen) werden gesetzt
-WALL_PIECES = {'keine': 0, 'wenig': 12, 'mittel': 24, 'viel': 40}
+# Wanddichte: so viele Wandstücke werden gesetzt (Mauerstücke 2–5 lang, Türme 2×2 oder Ecken, siehe wall_shape)
+WALL_PIECES = {'keine': 0, 'wenig': 18, 'mittel': 32, 'viel': 50}
+WALL_KEEP_FREE = 3                 # so viele Kästchen-Ringe bleiben um jeden Startplatz frei (Platz fürs Manaschild)
 
 DEFAULT_SETTINGS = {
-    'mode': 'turns',        # 'turns' = nacheinander mit Bedenkzeit, 'realtime' = alle gleichzeitig
+    'mode': 'realtime',     # 'turns' = nacheinander mit Bedenkzeit, 'realtime' = alle gleichzeitig
     'thinkTime': 30,        # Sekunden pro Zug (Runden-Modus)
     'cooldown': 3,          # Sekunden zwischen zwei Schüssen (Echtzeit-Modus)
     'walls': 'mittel',
     'functionList': True,   # darf die Funktionsliste geöffnet werden?
-    'symmetric': True,      # faire Welt: Wände und Startplätze gespiegelt
+    'symmetric': True,      # faire Welt: Wände gespiegelt (Startplätze sind immer zufällig)
     'wallsBreakable': True, # sprengen Treffer Löcher in Wände?
     'teams': False,         # 2 gegen 2 (nur bei 4 Spielern): links gegen rechts
     'powerups': True,       # Power-ups auf dem Feld
@@ -154,18 +155,33 @@ def mirror_cells(cells, mirrors):
     return out
 
 
+def wall_shape():
+    """Zufällige Form eines Wandstücks, Kästchen relativ zu (0, 0): Mauerstück (2–5 lang),
+    Turm (2×2) oder Ecke (L) – waagerecht oder senkrecht, in beliebige Richtung gedreht."""
+    roll = random.random()
+    if roll < 0.55:
+        cells = [(i, 0) for i in range(random.randint(2, 5))]
+    elif roll < 0.75:
+        cells = [(0, 0), (1, 0), (0, 1), (1, 1)]
+    else:
+        cells = [(i, 0) for i in range(random.randint(2, 4))] + [(0, j) for j in range(1, random.randint(2, 3))]
+    if random.random() < 0.5:
+        cells = [(r, c) for c, r in cells]
+    sx, sy = random.choice((1, -1)), random.choice((1, -1))
+    return [(sx * c, sy * r) for c, r in cells]
+
+
 def make_walls(grid, crosses, pieces, mirrors=1):
-    """Setzt Wandstücke (1–4 Kästchen, waagerecht oder senkrecht). Um jeden Spieler bleiben 2 Ringe frei.
+    """Setzt Wandstücke (siehe wall_shape). Um jeden Startplatz bleiben WALL_KEEP_FREE Ringe frei.
     Bei mirrors > 1 wird jedes Stück gespiegelt mitgesetzt (zählt dann als mehrere Stücke)."""
     placed = tries = 0
-    while placed < pieces and tries < pieces * 80:
+    while placed < pieces and tries < pieces * 150:
         tries += 1
         c, r = random.randint(0, COLS - 1), random.randint(0, ROWS - 1)
-        horizontal = random.random() < 0.5
-        cells = mirror_cells([(c + i, r) if horizontal else (c, r + i) for i in range(random.randint(1, 4))], mirrors)
+        cells = mirror_cells([(c + dc, r + dr) for dc, dr in wall_shape()], mirrors)
         ok = all(
             0 <= cc < COLS and 0 <= rr < ROWS and grid[rr][cc] == EMPTY
-            and all(cheb((cc + 0.5, rr + 0.5), p) > 2.6 for p in crosses)
+            and all(cheb((cc + 0.5, rr + 0.5), p) > WALL_KEEP_FREE for p in crosses)
             for cc, rr in cells
         )
         if ok:
@@ -295,20 +311,17 @@ def start_game(lobby):
     grid = [[EMPTY] * COLS for _ in range(ROWS)]
     now = time.time()
     symmetric = lobby['settings']['symmetric']
-    c1, r1 = pick_cross(grid, regions[0], [])
-    # Faire Welt: Startplätze gespiegelt (2 Spieler: an der y-Achse, 3–4: an beiden Achsen)
-    mirrored = [(c1, r1), (COLS - c1, r1)] if len(players) == 2 else \
-        [(c1, r1), (COLS - c1, r1), (c1, ROWS - r1), (COLS - c1, ROWS - r1)]
     taken = []
     teams = lobby['settings']['teams'] and len(players) == 4
     for i, (player, region) in enumerate(zip(players, regions)):
         # Teams: Viertel oben links + unten links gegen oben rechts + unten rechts
         player.update(lives=START_LIVES, alive=True, region=region, posVersion=0, nextFire=now + 2,
                       team=i % 2 if teams else None, shield=False, double=False)
-        player['c'], player['r'] = mirrored[i] if symmetric else pick_cross(grid, region, taken)
+        player['c'], player['r'] = pick_cross(grid, region, taken)   # Startplatz immer zufällig in der eigenen Hälfte/im Viertel
         taken.append((player['c'], player['r']))
+    # Faire Welt: Wände gespiegelt (2 Spieler: an der y-Achse, 3–4: an beiden Achsen)
     mirrors = (2 if len(players) == 2 else 4) if symmetric else 1
-    make_walls(grid, mirrored if symmetric else taken, WALL_PIECES[lobby['settings']['walls']], mirrors)
+    make_walls(grid, taken, WALL_PIECES[lobby['settings']['walls']], mirrors)
     lobby.update(grid=grid, phase='playing', gameId=lobby['gameId'] + 1, effects=[], busyUntil=None,
                  winnerId=None, winnerTeam=None, teamsActive=teams, turn=None, log=[], powerups=[],
                  nextPowerup=now + POWERUP_EVERY)
@@ -409,7 +422,7 @@ def apply_effect(lobby, effect):
         return                                            # schon getroffen und weggesprungen
     if target['shield']:
         target['shield'] = False
-        add_log(lobby, f"Der Schild von {target['name']} hält den Treffer von {shooter_name} ab!")
+        add_log(lobby, f"Der Schutzzauber von {target['name']} hält {shooter_name}s Treffer ab!")
         return
     if shooter:
         shooter['hits'] += 1
@@ -420,7 +433,8 @@ def apply_effect(lobby, effect):
         check_game_over(lobby)
     else:
         teleport(lobby, target)
-        add_log(lobby, f"{shooter_name} trifft {target['name']}! Noch {target['lives']} Leben.")
+        state = 'bekommt Risse' if target['lives'] >= 2 else 'zerbricht'
+        add_log(lobby, f"{shooter_name} trifft {target['name']} – Manaschild {state}!")
 
 
 def tick_lobby(lobby, now):

@@ -19,7 +19,10 @@
    ========================================================== */
 'use strict';
 
-const MP_RADIUS = { 3: 0.8, 2: 0.6, 1: 0.45 };   // Größe der Spieler nach Leben (wie die Gegner)
+// Manaschild = Trefferfläche eines Zauberers: ein fester Kreis um seinen Körper (nicht um die Kugel –
+// die Kurve startet weiter am Stab). Er wird bei Treffern nicht kleiner: 3 Leben = Schild ganz,
+// 2 = Schild mit Rissen, 1 = Schild zerbrochen (nur noch der Umriss), der nächste Treffer wirft raus.
+const MP_SHIELD_RADIUS = 0.75;
 const MP_DARK = { '#2f6fdb': '#1b3f8f', '#d64545': '#8f2a18', '#2e9e6a': '#1d6644', '#e08a1a': '#8a4f08' };
 const MP_KEEP_SHOTS = 8;                          // so viele Schüsse bleiben als blasse Spur stehen
 // Jeder Spieler hat zusätzlich zur Farbe ein Symbol und ein eigenes Strichmuster für seine
@@ -31,7 +34,7 @@ const TEAM_NAMES = ['Links', 'Rechts'];
 const POWERUP_RADIUS = 0.5;                       // so nah muss die Kurve kommen, um es einzusammeln
 const POWERUP_LOOK = {
   life: { sprite: 'heart', color: '#e0393e', name: '+1 Leben' },
-  shield: { sprite: 'shield', color: '#5b6b8c', name: 'Schild' },
+  shield: { sprite: 'shield', color: '#5b6b8c', name: 'Schutzzauber' },
   double: { text: '×2', color: '#e0218a', name: 'Doppelschuss' },
 };
 // Kleine Bilder in den Power-up-Blasen ('#' = Farbe des Power-ups)
@@ -70,7 +73,8 @@ const mpPlayer = id => (mp.lobby ? mp.lobby.players.find(p => p.id === id) : nul
 const mpMe = () => mpPlayer(mp.playerId);
 const mpIsHost = () => !!mp.lobby && mp.lobby.hostId === mp.playerId;
 const mpAuth = extra => ({ code: mp.code, playerId: mp.playerId, token: mp.token, ...extra });
-const mpRadius = p => MP_RADIUS[p.lives] || MP_RADIUS[1];
+// Mitte des Manaschilds in Welt-Koordinaten (der Körper steht in der eigenen Blickrichtung hinter dem Stab)
+const mpShieldCenter = p => ({ x: p.x + mirrorOf(p) * WIZARD_BODY.x, y: p.y + WIZARD_BODY.y });
 const hearts = lives => icon('heart').repeat(Math.max(0, lives)) + icon('heart', 'empty').repeat(Math.max(0, 3 - lives));
 const mpSymbol = p => MP_SYMBOLS[p.slot] || '●';
 const mpSymbolIcon = p => icon(MP_ICONS[p.slot] || 'circle');
@@ -283,7 +287,7 @@ async function mpFire() {
   const me = mpMe();
   const targets = mp.lobby.players
     .filter(p => p.alive && p.id !== me.id && !mpTeammate(p, me))          // Teamkollegen werden nicht getroffen
-    .map(p => ({ id: p.id, x: p.x, y: p.y, r: mpRadius(p), hp: p.lives, posVersion: p.posVersion }));
+    .map(p => ({ id: p.id, ...mpShieldCenter(p), r: MP_SHIELD_RADIUS, hp: p.lives, posVersion: p.posVersion }));
   const hits = findHits(curve.arms, targets).map(h => ({ id: h.enemy.id, s: h.s, posVersion: h.enemy.posVersion }));
   // Power-ups, die die Kurve berührt, werden eingesammelt (der Server prüft, wer zuerst da war)
   const items = (mp.lobby.powerups || []).map(u => ({ id: u.id, x: u.x, y: u.y, r: POWERUP_RADIUS, hp: 1 }));
@@ -389,8 +393,9 @@ function mpDiscSprite(R, fillColor, lineColor) {
   return sprite;
 }
 
-// Ring aus Kunst-Pixeln um (ci, cj); segments > 0: gestrichelt und drehend
-function mpRing(ci, cj, R, color, segments = 0) {
+// Ring mit Radius R um den Bildschirmpixel (cx, cy), gezeichnet aus Quadraten mit P Bildschirmpixeln
+// Kantenlänge; segments > 0: gestrichelt und drehend
+function mpRing(cx, cy, R, color, segments = 0, P = pix.K) {
   const turn = performance.now() / 1500;
   ctx.fillStyle = color;
   for (let j = -R - 1; j <= R; j++) {
@@ -398,9 +403,52 @@ function mpRing(ci, cj, R, color, segments = 0) {
       const d = Math.hypot(i + 0.5, j + 0.5);
       if (Math.abs(d - R) > 0.5) continue;
       if (segments && Math.floor((Math.atan2(j + 0.5, i + 0.5) / (2 * Math.PI) + turn) * segments * 2) % 2) continue;
-      ctx.fillRect((ci + i) * pix.K, (cj + j) * pix.K, pix.K, pix.K);
+      ctx.fillRect(cx + i * P, cy + j * P, P, P);
     }
   }
+}
+
+// Manaschild als kleines Bild (Radius R in Schild-Pixeln): lives 3 = ganz (Füllung, heller Rand,
+// Glanzlicht), 2 = Risse (Rand mit Lücken, Sprünge), 1 = zerbrochen (nur gepunkteter Umriss)
+function mpShieldSprite(R, color, lives) {
+  const state = lives >= 3 ? 'full' : lives === 2 ? 'cracked' : 'broken';
+  const key = 'shield|' + R + '|' + color + '|' + state;
+  if (spriteCache.has(key)) return spriteCache.get(key);
+  const size = 2 * R;
+  const sprite = document.createElement('canvas');
+  sprite.width = sprite.height = size;
+  const g = sprite.getContext('2d');
+  const inside = (x, y) => x >= 0 && y >= 0 && x < size && y < size && (x + 0.5 - R) ** 2 + (y + 0.5 - R) ** 2 <= R * R;
+  const rim = mpMix(color, '#ffffff', 0.45);
+  const isEdge = (x, y) => inside(x, y) && (!inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1));
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (!inside(x, y)) continue;
+      const edge = isEdge(x, y);
+      const inner = !edge && (isEdge(x - 1, y) || isEdge(x + 1, y) || isEdge(x, y - 1) || isEdge(x, y + 1));
+      const angle = Math.atan2(y + 0.5 - R, x + 0.5 - R);
+      let paint = null;
+      if (state === 'full') paint = edge ? color : inner ? rim : color + '33';
+      else if (state === 'cracked') {
+        const gap = Math.floor((angle / Math.PI + 1) * 7) % 3 === 0;   // Lücken im Rand
+        paint = edge ? (gap ? null : color) : inner && !gap ? rim + '99' : color + '1a';
+      } else if (edge && (x + y) % 3 === 0) paint = color + 'cc';     // nur noch die Trefferfläche
+      if (paint) { g.fillStyle = paint; g.fillRect(x, y, 1, 1); }
+    }
+  }
+  if (state === 'full') {   // Glanzlicht oben links
+    g.fillStyle = '#ffffffb0';
+    for (let k = 0; k < Math.max(2, Math.round(R / 3)); k++) g.fillRect(Math.round(R * 0.45) + k, Math.round(R * 0.3) - Math.floor(k / 2), 1, 1);
+  }
+  if (state === 'cracked') {   // zwei Sprünge vom Rand nach innen
+    g.fillStyle = color;
+    for (let k = 0; k < Math.round(R * 0.45); k++) {
+      g.fillRect(size - 2 - k, Math.round(R * 0.5) + (k % 2), 1, 1);
+      g.fillRect(Math.round(R * 0.35) + (k % 2), size - 2 - k, 1, 1);
+    }
+  }
+  spriteCache.set(key, sprite);
+  return sprite;
 }
 
 // Power-ups: Blase mit Bild, schwebt leicht auf und ab
@@ -448,26 +496,30 @@ function mpDrawPlayers() {
   const lobby = mp.lobby;
   if (!lobby) return;
   const { K, T, S } = pix;
-  const gap = 19 * T;   // Symbol (7 Raster-Pixel à 2 · T) + Abstand bis zum Namen
+  const P = wizardPixel();   // Schild und Ringe in derselben Pixelgröße wie der Zauberer
+  const gap = 19 * T;        // Symbol (7 Raster-Pixel à 2 · T) + Abstand bis zum Namen
   const turnId = lobby.settings.mode === 'turns' && lobby.turn && !lobby.busy ? lobby.turn.playerId : null;
   for (const p of lobby.players) {
     if (!p.alive) continue;
     const isMe = p.id === mp.playerId;
     const dark = MP_DARK[p.color] || COLORS.ink;
-    const R = Math.max(3, Math.round(mpRadius(p) * pix.A));
-    const ci = Math.round(artX(p.x));
-    const cj = Math.round(artY(p.y));
+    const center = mpShieldCenter(p);
+    const cx = screenX(center.x);
+    const cy = screenY(center.y);
+    const R = Math.max(4, Math.round(MP_SHIELD_RADIUS * pix.U / P));   // in Schild-Pixeln
 
-    // Trefferfläche (so groß wie der Spieler gerade ist), Schild und – wer am Zug ist – ein drehender Ring
-    blit(mpDiscSprite(R, p.color + '33', p.color), ci - R, cj - R);
-    if (p.shield) mpRing(ci, cj, R + 1, POWERUP_LOOK.shield.color);
-    if (p.id === turnId) mpRing(ci, cj, R + 3, dark, 8);
+    // Manaschild (= Trefferfläche) hinter dem Zauberer, darum der Schutzzauber und – wer am Zug ist – ein drehender Ring
+    ctx.drawImage(mpShieldSprite(R, p.color, p.lives), cx - R * P, cy - R * P, 2 * R * P, 2 * R * P);
+    if (p.shield) mpRing(cx, cy, R + 2, POWERUP_LOOK.shield.color, 0, P);
+    if (p.id === turnId) mpRing(cx, cy, R + 4, dark, 8, P);
 
-    // Jeder schaut in seine eigene x-Richtung (wer gespiegelt spielt, schaut in der Welt nach links)
-    const box = drawWizard(ci, cj, p.color, dark, p.color, mirrorOf(p) * viewMirror());
-    const top = Math.min(box.top, cj - R - (p.id === turnId ? 4 : 0));
+    // Jeder schaut in seine eigene x-Richtung (wer gespiegelt spielt, schaut in der Welt nach links);
+    // die Kugel am Stab ist sein Nullpunkt
+    drawWizard(screenX(p.x), screenY(p.y), p.color, dark, p.color, mirrorOf(p) * viewMirror());
+    const top = Math.floor((cy - (R + (p.id === turnId ? 5 : p.shield ? 3 : 1)) * P) / K);   // Kunst-Pixel
 
     // Leben als Herzen, darüber Symbol + Name, darüber das Team
+    const ci = Math.round(cx / K);
     drawHearts(ci, top - 1, p.lives, 3);
     const name = `${isMe ? 'DU · ' : ''}${p.name}${p.double ? ' ×2' : ''}`;
     const w = textWidth(name) + gap;
@@ -519,7 +571,10 @@ function mpHoverText(m) {
   if (item && POWERUP_LOOK[item.kind]) {
     return `${POWERUP_LOOK[item.kind].name} ${placeText(item.x, item.y)}`;
   }
-  const p = lobby.players.find(q => q.alive && Math.hypot(q.x - m.x, q.y - m.y) <= mpRadius(q));
+  const p = lobby.players.find(q => {
+    const c = mpShieldCenter(q);
+    return q.alive && Math.hypot(c.x - m.x, c.y - m.y) <= MP_SHIELD_RADIUS;
+  });
   if (!p) return null;
   if (p.id === me.id) return 'Du (0 | 0)';
   return `${p.name} ${placeText(p.x, p.y)}${mpTeammate(p, me) ? ' · Team' : ''}`;
