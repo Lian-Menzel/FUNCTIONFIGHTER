@@ -142,11 +142,13 @@ def pick_cross(grid, region, avoid, old=None):
 
 
 def mirror_cells(cells, mirrors):
-    """Kästchen samt Spiegelbildern. mirrors: 1 = keine, 2 = Drehung um die Feldmitte, 4 = an beiden Achsen."""
+    """Kästchen samt Spiegelbildern. mirrors: 1 = keine, 2 = an der y-Achse, 4 = an beiden Achsen.
+    Gespiegelt wird an der y-Achse, weil jeder Spieler sich links sieht (wer rechts steht, sieht das
+    Feld gespiegelt) – so hat jeder in seiner eigenen Ansicht genau dasselbe Bild."""
     out = set(cells)
     for c, r in cells:
         if mirrors == 2:
-            out.add((COLS - 1 - c, ROWS - 1 - r))
+            out.add((COLS - 1 - c, r))
         elif mirrors == 4:
             out |= {(COLS - 1 - c, r), (c, ROWS - 1 - r), (COLS - 1 - c, ROWS - 1 - r)}
     return out
@@ -294,8 +296,8 @@ def start_game(lobby):
     now = time.time()
     symmetric = lobby['settings']['symmetric']
     c1, r1 = pick_cross(grid, regions[0], [])
-    # Faire Welt: Startplätze gespiegelt (2 Spieler: Drehung um die Mitte, 3–4: an beiden Achsen)
-    mirrored = [(c1, r1), (COLS - c1, ROWS - r1)] if len(players) == 2 else \
+    # Faire Welt: Startplätze gespiegelt (2 Spieler: an der y-Achse, 3–4: an beiden Achsen)
+    mirrored = [(c1, r1), (COLS - c1, r1)] if len(players) == 2 else \
         [(c1, r1), (COLS - c1, r1), (c1, ROWS - r1), (COLS - c1, ROWS - r1)]
     taken = []
     teams = lobby['settings']['teams'] and len(players) == 4

@@ -7,7 +7,7 @@ Spiel sie verstanden hat. Jede Funktion (außer linearen) lässt sich in den
 **⚙ Einstellungen** einzeln an- und ausschalten.
 
 Fertige Standardfunktionen mit Parametern zum Kopieren, Anpassen und Feuern gibt es im Spiel
-unter **📈 Funktionen** (im Tutorial, im Sandkasten und im Multiplayer, wenn der Host es erlaubt).
+unter dem Diagramm-Knopf links neben der Eingabe (im Tutorial, im Sandkasten und im Multiplayer, wenn der Host es erlaubt).
 
 ## Grundregeln
 
@@ -27,6 +27,8 @@ unter **📈 Funktionen** (im Tutorial, im Sandkasten und im Multiplayer, wenn d
 - **Exponenten:** Zum Exponenten gehört ein Vorzeichen und **ein** Baustein, also eine Zahl,
   `x`, eine Funktion oder eine Klammer. `e^2x` heißt deshalb e² · x. Für e^(2x) brauchst du
   Klammern. Die Vorschau zeigt dir immer, wie es gemeint ist.
+- **Potenztürme** werden wie in der Mathematik von rechts gerechnet: `x^2^3` = x^(2³) = x⁸,
+  `e^-x^2` = e^(−x²) (Glockenkurve). Für (x²)³ schreib `(x^2)^3`.
 - **Zusätzlich erlaubt:** `frac(Zähler;Nenner)` und echtes LaTeX wie `\frac{1}{2}`,
   `\sqrt{x}` oder `x^{2x+1}`. `{ }` und `( )` bedeuten dasselbe, der Backslash ist optional.
 
@@ -40,7 +42,8 @@ unter **📈 Funktionen** (im Tutorial, im Sandkasten und im Multiplayer, wenn d
 ## Alle Funktionen
 
 Das Argument steht in Klammern, bei einfachen Argumenten dürfen sie auch fehlen:
-`sin x`, `sin 2x`. Potenzen von Funktionen schreibst du so: `sin^2(x)`.
+`sin x`, `sin 2x`. Potenzen von Funktionen schreibst du so: `sin^2(x)`. `sin^-1(x)` gibt es
+nicht – das bedeutet in der Mathematik arcsin(x). Für 1/sin(x) schreib `1/sin(x)`.
 
 ### Grundlagen
 
@@ -49,7 +52,7 @@ Das Argument steht in Klammern, bei einfachen Argumenten dürfen sie auch fehlen
 | Lineare Funktion | `2x+1`, `x/3`, `x/3-2` | alle x | **immer erlaubt** |
 | Potenzen & Polynome | `x^2`, `x^3-2x`, `x(x+1)` | alle x | Potenzen & Polynome |
 | Bruchfunktion (x im Nenner) | `1/(x+1)`, `2/(x-5)` | Nenner ≠ 0 | Bruchfunktionen |
-| Betrag | `abs(x)`, `|x-3|` | alle x | Betrag |
+| Betrag | `abs(x)`, `|x-3|`, `2|x|` | alle x | Betrag |
 
 `x/2` (x nur im Zähler) gilt als **linear**, `x^2/10` als **Potenz**.
 
@@ -101,7 +104,8 @@ die Kurve selbst ein, sondern wie sie sich ändert – das Spiel rechnet die Kur
 | `y′ =` | Steigung an jeder Stelle | `x`, `y` | `x/5` → Parabel x²/10 · `1` → Gerade · `-y/4+1` → steigt und flacht ab · `y/6+0.3` → wächst exponentiell |
 | `y″ =` | Krümmung; dazu ein **Startwinkel** (−85° … 85°) | `x`, `y`, `y'` | `-y/9` → Schwingung (Höhe 3 · sin(Winkel)) · `0` → Gerade im Startwinkel · `-0.05` → Wurfbahn · `-y'/3` → bremst ab |
 
-- Die **Richtung** (→ rechts / ← links) wählst du im Feld daneben – das Minus vor x gilt hier nicht.
+- Geschossen wird wie immer nach rechts (in deinem Koordinatensystem), mit `L` davor nach links –
+  gelöst wird dann von x = 0 aus rückwärts bis zum linken Rand.
 - `y` heißt „Höhe relativ zu dir“, `y'` „aktuelle Steigung“. Beide gibt es nur in diesen Modi.
 - Die Kurve endet wie sonst an Wänden, am Feldrand oder wenn die Rechnung nicht mehr geht.
 - Im Multiplayer kann der Host die Profi-Modi in der Lobby abschalten.
@@ -121,15 +125,31 @@ Schuss wird nicht abgefeuert. Er kostet dann auch keinen Angriff.
 ## So wird geschossen
 
 **Jeder Spieler hat sein eigenes Koordinatensystem.** Du stehst immer auf einem Kreuz des
-Rasters. Die blauen Achsen gehen durch dich: Du bist der **Ursprung (0 | 0)**, und alle
-Zahlen an den Achsen zählen von dir aus. Das Spielfeld ist 50 Einheiten breit und 30 hoch.
+Rasters. Die blauen Achsen gehen durch dich: Du bist der **Nullpunkt (0 | 0)**, und alle
+Zahlen an den Achsen zählen von dir aus. Ein gemeinsames Koordinatensystem gibt es nicht.
+Das Spielfeld ist 50 Einheiten breit und 30 hoch.
 
-Deine Funktion wird genau so gezeichnet wie im **Sandkasten**: von dir aus und nur
-**senkrecht verschoben**, bis sie durch dich geht. In deinem Koordinatensystem ist das
+**Jeder sieht sich selbst links** und schießt **nach rechts**. Steht ein Spieler in der rechten
+Hälfte (im Multiplayer), wird das Feld für ihn an der y-Achse gespiegelt – seine x-Richtung
+zeigt dann in der Welt nach links, y bleibt gleich.
+
+Deine Funktion wird von dir aus gezeichnet und nur **senkrecht verschoben**, bis sie durch
+dich geht:
 
 ```
-y = f(x) − f(0)
+y = f(x) − f(0)        für x ≥ 0
 ```
+
+**Nach links schießen:** Schreib `L` (oder `l`) vor die Funktion, z. B. `L x^2/8` oder `lx/2`.
+Dann fliegt die Kurve von dir aus nach links:
+
+```
+y = f(x) − f(0)        für x ≤ 0
+```
+
+`R`/`r` oder gar nichts davor heißt nach rechts (Standard). Auch `f(x) = L x^2` geht. Die
+Taste `← L` bei den Mathe-Tasten schaltet die Richtung um. Bei `L x^2/8` steigt die Kurve
+also nach links an, bei `L x/2` fällt sie nach links (die Steigung bleibt 1/2).
 
 Daraus folgt:
 
@@ -138,11 +158,11 @@ Daraus folgt:
 - **Ein `+b` am Ende ändert nichts.** `x+3` und `x` sind derselbe Schuss, weil das +3
   beim Verschieben wieder wegfällt.
 - **Geraden sind überall gleich.** Bei `m·x` ist die Steigung überall m, deshalb rechnest
-  du sie einfach von dir zum Gegner aus: m = Δy / Δx.
+  du sie einfach von dir zum Gegner aus: m = y / x des Gegners.
 
 Gegner sitzen in der Mitte ihrer Kästchen. In deinem Koordinatensystem liegen sie deshalb
-immer bei „… ,5“, z. B. (4,5 | 1,5). Fährst du mit der Maus über einen Gegner, siehst du
-genau diese Koordinaten.
+immer bei „… ,5“, z. B. (4,5 | 1,5). Fährst du mit der Maus übers Feld, siehst du die
+Position des Mauszeigers in deinem Koordinatensystem, über einem Gegner seine Koordinaten.
 
 | Fall | Was passiert | Beispiel |
 |---|---|---|
@@ -150,17 +170,7 @@ genau diese Koordinaten.
 | f(0) definiert | Verschiebung um f(0) – die Kurve geht exakt durch dich | `cos(x)` → cos(x) − 1, `e^x` → eˣ − 1 |
 | f(0) nicht definiert | Du kannst nicht schießen. Die Vorschau zeigt es an, es kostet nichts. | `1/x` → nimm z. B. `1/(x+1)` |
 
-Wie bei Graphwar fliegt die Kurve durch Gegner hindurch und sprengt Löcher in Wände. Anders
-als bei Graphwar hat jeder Spieler sein eigenes Koordinatensystem, und die Richtung legst du
-mit einem Minus fest (siehe unten).
-
-### Richtung (Abweichung von Graphwar)
-
-- Der Schuss fliegt von dir aus **nach rechts**.
-- Steht direkt vor **jedem** x ein Minus (`-x`, `(-x)/6`, `sin(-x)`, `sqrt(-x)`), fliegt er
-  **nach links**.
-- Fallend nach rechts schreibst du deshalb `-2x` oder `-(x/6)`. Bei `-x/6` steht das Minus
-  direkt vor x – der Schuss fliegt nach links.
+Wie bei Graphwar fliegt die Kurve durch Gegner hindurch und sprengt Löcher in Wände.
 
 ### Treffer
 
@@ -177,16 +187,18 @@ Es gibt **keine Reichweiten-Grenze**. Der Schuss fliegt, bis
   Unter **⚙ Einstellungen → Wände zerstörbar** (im Multiplayer in der Lobby) lässt sich das
   abschalten – dann bleiben Wände stehen und stoppen die Kurve nur.
 - er das Spielfeld **oben, unten oder seitlich** verlässt,
-- er an eine **Sprungstelle** kommt (z. B. `tan(x)` oder `1/(x-3)` bei x = 3),
-- die Funktion **nicht mehr definiert** ist (z. B. `sqrt(x)` links der y-Achse).
+- er an eine **Unstetigkeit** kommt: eine Polstelle (z. B. `tan(x)` oder `1/(x-3)` bei x = 3)
+  oder einen Sprung (z. B. `(x-3)/|x-3|` bei x = 3). Erkannt wird das per Intervallhalbierung
+  zwischen zwei Rechenpunkten – Sprünge ab etwa einem Bildschirmpixel Höhe stoppen den Schuss,
+  steile, aber stetige Stellen (z. B. `sqrt[3](x-3)`) nicht,
+- die Funktion **nicht mehr definiert** ist (z. B. `sqrt(4-x)` ab 4 rechts von dir).
 
 ### Beispiele
 
 - Ein Gegner liegt bei (4,5 | 1,5) in deinem Koordinatensystem: `x/3` trifft ihn.
-- `(-x)/3` ist das Spiegelbild: Es fliegt nach links und steigt dabei.
+- `-x/3` fällt nach rechts mit der Steigung −1/3.
 - `x^2/8` startet bei dir waagerecht und steigt immer steiler: bei x = 4,5 ist es ≈ 2,5.
-- `sqrt(x)` gibt es nur für x ≥ 0, fliegt also nach rechts. Nach links nimmst du
-  `sqrt(-x)`, `sqrt(abs(x))` gibt es auf beiden Seiten.
+- `sqrt(x)` gibt es nur für x ≥ 0 – also genau ab dir nach rechts.
 - Eine Wand versperrt die Gerade zum Gegner? Schieß einmal hinein, dann fliegt der nächste
   Schuss durch das Loch – oder nimm eine Kurve, die um die Wand herumgeht.
 - **Garantie, dass du jeden Gegner treffen kannst:**
@@ -225,8 +237,7 @@ rechts davon ein Gegner mit 2 Lebenspunkten, darüber eine Wand.
 0000000000
 ```
 
-Die aktuelle Karte kannst du im Spiel unter **⚙ Einstellungen → „Aktuelle Karte als
-Matrix“** ansehen.
+Die aktuelle Karte kannst du im Spiel unter **⚙ Einstellungen → „Karte als Matrix“** ansehen.
 
 ### Zufällige Level (Standard)
 
@@ -235,7 +246,7 @@ Ein Level in `script.js` ist ein Rezept, aus dem bei jedem Start eine neue Karte
 ```js
 {
   name: 'Die Parabel',
-  task: '…', hint: '…',
+  form: 'a\\cdot x^2',     // Funktionsform (LaTeX), steht unter dem Namen
   shapes: ['parabola'],   // pro Eintrag eine Gegnergruppe auf einer Kurve dieser Form
   count: 4,               // Gegner pro Gruppe
   hp: [1, 2],             // mögliche Lebenspunkte
@@ -247,8 +258,8 @@ Ein Level in `script.js` ist ein Rezept, aus dem bei jedem Start eine neue Karte
 Formen (`SHAPES` in `script.js`): `linear` (m·x), `parabola`, `throw`, `cubic`, `rational`,
 `sqrt`, `exp`, `sin`, `cos`, `tan`, `combo`.
 
-Der Generator setzt den Spieler auf ein zufälliges Kreuz und würfelt pro Gruppe eine
-Funktion (z. B. `x^2/4` oder `3/(x-5)`). Die Gegner kommen in Kästchen, durch deren Mitte
+Der Generator setzt den Spieler auf ein zufälliges Kreuz in der linken Hälfte und würfelt pro
+Gruppe eine Funktion (z. B. `x^2/4` oder `3/(x-5)`). Die Gegner kommen in Kästchen, durch deren Mitte
 diese Kurve läuft. Die Wände stehen nie auf den Lösungskurven, gern aber auf der direkten
 Linie zwischen dir und den Gegnern. Zum Schluss wird die Lösung simuliert, und nur lösbare
 Karten werden genommen.
@@ -260,7 +271,6 @@ Statt eines Rezepts kann ein Level auch eine feste Matrix haben:
 ```js
 {
   name: 'Meine Karte',
-  task: '…', hint: '…',
   shots: 3,
   solution: ['x/2'],          // optional, wird nach einer Niederlage gezeigt
   layout: [
@@ -274,12 +284,12 @@ Statt eines Rezepts kann ein Level auch eine feste Matrix haben:
 
 | Meldung | Lösung |
 |---|---|
-| „Es fehlt eine schließende Klammer“ | Jede `(` braucht eine `)` |
-| „Die Eingabe ist unvollständig“ | Nach `+`, `-`, `/` oder `^` fehlt noch etwas, z. B. `x/` → `x/2` |
-| „Unbekannte Variable“ | Nur `x` ist erlaubt |
-| „Doppelter Exponent“ | Klammern setzen: `(x^2)^3` |
-| „… schwingt zu schnell“ | Bei sin und cos ist die Zahl vor x höchstens 4: `sin(4x)` statt `sin(5x)` |
-| „bei dir nicht definiert“ | f hat bei x = 0 keinen Wert, z. B. `1/x` – nimm z. B. `1/(x+1)` |
-| „… gibt es in diesem Spiel nicht“ | Logarithmen (`ln`, `log`, `lg`) und `arcsin`, `arccos`, `arctan` sind entfernt |
-| „In den Einstellungen deaktiviert“ | Funktion unter ⚙ wieder einschalten |
-| „Nach frac bitte Klammern verwenden“ | nur bei der frac-Schreibweise: `frac(Zähler;Nenner)` – oder einfach `/` |
+| „) fehlt“ | Jede `(` braucht eine `)` |
+| „Nach … fehlt etwas“ | Nach `+`, `-`, `/` oder `^` fehlt noch etwas, z. B. `x/` → `x/2` |
+| „Unbekannt: … – nur x“ | Nur `x` ist erlaubt |
+| „Zu schnell – höchstens sin(4x)“ | Bei sin und cos ist die Zahl vor x höchstens 4: `sin(4x)` statt `sin(5x)` |
+| „f(0) nicht definiert“ | f hat bei x = 0 keinen Wert, z. B. `1/x` – nimm z. B. `1/(x+1)` |
+| „… gibt es hier nicht“ | Logarithmen (`ln`, `log`, `lg`) und `arcsin`, `arccos`, `arctan` sind entfernt |
+| „sin^-1 gibt es nicht“ | Das wäre arcsin. Für 1/sin(x) schreib `1/sin(x)` |
+| „Aus: …“ | Funktion unter ⚙ Einstellungen wieder einschalten |
+| „Klammern: frac(a;b)“ | nur bei der frac-Schreibweise: `frac(Zähler;Nenner)` – oder einfach `/` |

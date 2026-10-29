@@ -13,10 +13,10 @@
 // Zahl ohne überflüssige Nachkommastellen, z. B. 0.125 oder -2
 const catNum = n => String(parseFloat(Number(n).toFixed(4)));
 
-// a · rest als Eingabe-Text: 1·x = x, −1·x = -(x) (ein Minus direkt vor x hieße „nach links“)
+// a · rest als Eingabe-Text: 1·x = x, −1·x = -x
 function catCoef(a, rest) {
   if (a === 1) return rest;
-  if (a === -1) return rest === 'x' ? '-(x)' : '-' + rest;
+  if (a === -1) return '-' + rest;
   return catNum(a) + rest;
 }
 
@@ -26,7 +26,7 @@ function catPlus(b, rest) {
 }
 
 // Jeder Eintrag: Name, Formel mit Parametern, Parameter (Startwert, Schritt, Grenzen) und
-// build(p) -> Eingabe-Text. Die Richtung (rechts/links) kommt für alle Einträge dazu.
+// build(p) -> Eingabe-Text (x zählt vom Spieler aus).
 const CATALOG = [
   { name: 'Gerade', formula: 'a·x', params: [{ k: 'a', v: 0.5, step: 0.25 }],
     build: p => catCoef(p.a, 'x') },
@@ -79,10 +79,9 @@ function toggleCatalog() {
   ui.catalogCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// Eingabe-Text eines Eintrags (mit Richtung)
+// Eingabe-Text eines Eintrags
 function catalogCode(item) {
-  const code = item.build(item.values);
-  return item.dir < 0 ? mirrorX(code) : code;
+  return item.build(item.values);
 }
 
 // Text in die Zwischenablage – mit Ausweichweg, weil die Zwischenablage-API
@@ -100,59 +99,70 @@ function copyText(text) {
   return Promise.resolve();
 }
 
-// Kleiner Graph: ganze Funktion blass, der Teil in Schussrichtung kräftig
+// Kleiner Graph (Mitte = du): ganze Funktion blass, der geschossene Teil (nach rechts)
+// kräftig – genau wie im Spiel um f(0) verschoben
 function drawCatalogGraph(canvasEl, result) {
-  const w = canvasEl.clientWidth || 170;
-  const h = canvasEl.clientHeight || 96;
+  // Pixel-Graph: ein Graph-Pixel = 2 Pixel der Oberfläche (pix.T), das Canvas hat genau
+  // so viele Pixel wie der Bildschirm an dieser Stelle → scharf bei jeder Auflösung
   const dpr = window.devicePixelRatio || 1;
-  canvasEl.width = Math.round(w * dpr);
-  canvasEl.height = Math.round(h * dpr);
+  const k = 2 * pix.T;
+  canvasEl.style.width = canvasEl.style.height = '';   // erst die von CSS vorgegebene Größe messen
+  const w = Math.max(20, Math.floor((canvasEl.clientWidth || 170) * dpr / k));
+  const h = Math.max(12, Math.floor((canvasEl.clientHeight || 96) * dpr / k));
+  canvasEl.width = w * k;
+  canvasEl.height = h * k;
+  canvasEl.style.width = w * k / dpr + 'px';
+  canvasEl.style.height = h * k / dpr + 'px';
   const g = canvasEl.getContext('2d');
-  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const dot = (color, i, j, s = 1) => { g.fillStyle = color; g.fillRect(i * k, j * k, s * k, s * k); };
+  const sx = u => Math.round((u + CAT_VIEW.x) / (2 * CAT_VIEW.x) * w);
+  const sy = v => Math.round((CAT_VIEW.y - v) / (2 * CAT_VIEW.y) * h);
   g.fillStyle = COLORS.paper;
-  g.fillRect(0, 0, w, h);
-  const sx = u => (u + CAT_VIEW.x) / (2 * CAT_VIEW.x) * w;
-  const sy = v => (CAT_VIEW.y - v) / (2 * CAT_VIEW.y) * h;
-
-  g.strokeStyle = COLORS.grid;
-  g.lineWidth = 1;
-  for (let u = -CAT_VIEW.x; u <= CAT_VIEW.x; u += 2) { g.beginPath(); g.moveTo(sx(u), 0); g.lineTo(sx(u), h); g.stroke(); }
-  for (let v = -CAT_VIEW.y; v <= CAT_VIEW.y; v += 2) { g.beginPath(); g.moveTo(0, sy(v)); g.lineTo(w, sy(v)); g.stroke(); }
-  g.strokeStyle = COLORS.axes;
-  g.lineWidth = 1.5;
-  g.beginPath(); g.moveTo(0, sy(0)); g.lineTo(w, sy(0)); g.moveTo(sx(0), 0); g.lineTo(sx(0), h); g.stroke();
+  g.fillRect(0, 0, w * k, h * k);
+  for (let u = -CAT_VIEW.x + 2; u < CAT_VIEW.x; u += 2) for (let j = 1; j < h; j += 2) dot(COLORS.grid, sx(u), j);
+  for (let v = -CAT_VIEW.y + 2; v < CAT_VIEW.y; v += 2) for (let i = 1; i < w; i += 2) dot(COLORS.grid, i, sy(v));
+  g.fillStyle = COLORS.axes;
+  g.fillRect(0, sy(0) * k, w * k, k);
+  g.fillRect(sx(0) * k, 0, k, h * k);
   if (!result.ok) return;
 
+  // Kurve als lückenlose Pixel-Linie (Bresenham zwischen den Abtastpunkten)
   const f0 = result.fn(0);
-  const plot = (from, to, color, width) => {
-    g.strokeStyle = color;
-    g.lineWidth = width;
-    g.beginPath();
-    let pen = false;
+  const plot = (from, to, color, size) => {
     let prev = null;
+    let pv = null;
     const step = (to - from) / 300;
-    for (let i = 0; i <= 300; i++) {
-      const u = from + i * step;
+    for (let n = 0; n <= 300; n++) {
+      const u = from + n * step;
       const v = result.fn(u) - f0;
-      const ok = Number.isFinite(v) && Math.abs(v) < 1e3 && (prev === null || Math.abs(v - prev) < 4);
-      if (ok && pen) g.lineTo(sx(u), sy(v));
-      else if (ok) g.moveTo(sx(u), sy(v));
-      pen = ok;
-      prev = ok ? v : null;
+      const ok = Number.isFinite(v) && Math.abs(v) < 1e3 && (pv === null || Math.abs(v - pv) < 4);
+      if (!ok) { prev = null; pv = null; continue; }
+      const i = sx(u);
+      const j = Math.max(-2, Math.min(h + 2, sy(v)));
+      let [x, y] = prev || [i, j];
+      const di = Math.abs(i - x), dj = -Math.abs(j - y), si = x < i ? 1 : -1, sj = y < j ? 1 : -1;
+      let err = di + dj;
+      for (;;) {
+        dot(color, x - (size - 1), y - (size - 1), size);
+        if (x === i && y === j) break;
+        const e2 = 2 * err;
+        if (e2 >= dj) { err += dj; x += si; }
+        if (e2 <= di) { err += di; y += sj; }
+      }
+      prev = [i, j];
+      pv = v;
     }
-    g.stroke();
   };
-  plot(-CAT_VIEW.x, CAT_VIEW.x, 'rgba(43, 40, 64, 0.25)', 1.5);
-  if (Number.isFinite(f0)) plot(0, result.dir * CAT_VIEW.x, COLORS.curve, 3);
-  g.fillStyle = COLORS.axes;
-  g.fillRect(sx(0) - 3, sy(0) - 3, 6, 6);
+  plot(-CAT_VIEW.x, CAT_VIEW.x, COLORS.trail, 1);
+  if (Number.isFinite(f0)) plot(0, CAT_VIEW.x, COLORS.curve, 2);
+  dot(COLORS.ink, sx(0) - 2, sy(0) - 2, 4);
+  dot('#ffffff', sx(0) - 1, sy(0) - 1, 2);
 }
 
 // Baut die Liste einmal auf; danach aktualisiert jede Karte sich selbst
 function buildCatalog() {
   ui.catalogList.replaceChildren(...CATALOG.map(item => {
     item.values = Object.fromEntries(item.params.map(p => [p.k, p.v]));
-    item.dir = 1;
 
     const card = document.createElement('div');
     card.className = 'cat-item';
@@ -163,9 +173,9 @@ function buildCatalog() {
       <code class="cat-code"></code>
       <div class="cat-error"></div>
       <div class="cat-actions">
-        <button type="button" class="btn btn-small" data-act="copy">Kopieren</button>
-        <button type="button" class="btn btn-small" data-act="use">Einsetzen</button>
-        <button type="button" class="btn btn-small btn-catfire" data-act="fire">Feuer!</button>
+        <button type="button" class="btn btn-small" data-act="copy" title="Kopieren">${icon('copy')}</button>
+        <button type="button" class="btn btn-small" data-act="use" title="Einsetzen">${icon('insert')}</button>
+        <button type="button" class="btn btn-small btn-catfire" data-act="fire" title="Feuer">${icon('bolt')}</button>
       </div>`;
     card.querySelector('b').textContent = item.name;
     card.querySelector('.cat-formula').textContent = item.formula;
@@ -177,7 +187,7 @@ function buildCatalog() {
     const refresh = () => {
       const code = catalogCode(item);
       const result = compileLatex(code);
-      const curve = result.ok ? buildCurve(result.fn, { x: 0, y: 0 }, null, result.dir) : null;
+      const curve = result.ok ? buildCurve(result.fn, state.player, null) : null;
       const error = !result.ok ? result.error : curve.error || '';
       codeEl.textContent = code;
       errorEl.textContent = error;
@@ -205,17 +215,13 @@ function buildCatalog() {
       label.append(p.k + ' =', input);
       params.append(label);
     }
-    const dir = document.createElement('select');
-    dir.innerHTML = '<option value="1">→ rechts</option><option value="-1">← links</option>';
-    dir.addEventListener('change', () => { item.dir = Number(dir.value); refresh(); });
-    params.append(dir);
 
     card.querySelector('.cat-actions').addEventListener('click', event => {
       const act = event.target.dataset.act;
       if (!act) return;
       const code = catalogCode(item);
       if (act === 'copy') {
-        copyText(code).then(() => showMessage(`„${code}“ kopiert.`, 'good'), () => showMessage('Kopieren hat nicht geklappt.', 'error'));
+        copyText(code).then(() => showMessage('Kopiert', 'good'), () => showMessage('Kopieren fehlgeschlagen', 'error'));
         return;
       }
       if (state.inputMode !== 'y') setInputMode('y');   // die Liste enthält normale Funktionen

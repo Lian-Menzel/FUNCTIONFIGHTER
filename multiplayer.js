@@ -10,7 +10,11 @@
        /api/events) – mpOnState / mpOnShot verarbeiten sie.
      – Beim Feuern rechnet DIESER Browser Kurve, Treffer und Loch in
        der Wand aus (dieselbe Mathematik wie im Einzelspieler) und
-       schickt sie an den Server. Der Server wendet die Treffer an,
+       schickt sie an den Server.
+     – Jeder sieht sich selbst LINKS: Wer in der rechten Hälfte steht,
+       bekommt das Feld gespiegelt angezeigt und rechnet in seinem
+       gespiegelten Koordinatensystem (mirrorOf / ownX in script.js).
+       Verschickt wird immer in Welt-Koordinaten. Der Server wendet die Treffer an,
        sobald die Kurve beim Ziel ankommt, und teleportiert das Ziel.
    ========================================================== */
 'use strict';
@@ -21,23 +25,29 @@ const MP_KEEP_SHOTS = 8;                          // so viele Schüsse bleiben a
 // Jeder Spieler hat zusätzlich zur Farbe ein Symbol und ein eigenes Strichmuster für seine
 // Spuren – so sind die Spieler auch ohne Farben (Farbenblindheit) gut zu unterscheiden.
 const MP_SYMBOLS = ['●', '▲', '■', '◆'];
-const MP_DASH = [[], [14, 7], [3, 6], [14, 6, 3, 6]];    // durchgezogen, gestrichelt, gepunktet, Strich-Punkt
+const MP_ICONS = ['circle', 'triangle', 'square', 'diamond'];   // dieselben Symbole als Pixel-Icons
+const MP_DASH = [[], [5, 3], [1, 2], [5, 2, 1, 2]];      // in Kunst-Pixeln: durchgezogen, gestrichelt, gepunktet, Strich-Punkt
 const TEAM_NAMES = ['Links', 'Rechts'];
 const POWERUP_RADIUS = 0.5;                       // so nah muss die Kurve kommen, um es einzusammeln
 const POWERUP_LOOK = {
-  life: { icon: '♥', color: '#d64545', name: '+1 Leben' },
-  shield: { icon: '🛡', color: '#5b6b8c', name: 'Schild (hält einen Treffer ab)' },
-  double: { icon: '×2', color: '#e0218a', name: 'Doppelschuss (nächster Schuss kostet 2 Leben)' },
+  life: { sprite: 'heart', color: '#e0393e', name: '+1 Leben' },
+  shield: { sprite: 'shield', color: '#5b6b8c', name: 'Schild' },
+  double: { text: '×2', color: '#e0218a', name: 'Doppelschuss' },
+};
+// Kleine Bilder in den Power-up-Blasen ('#' = Farbe des Power-ups)
+const POWERUP_SPRITES = {
+  heart: ['.#.#.', '#####', '.###.', '..#..'],
+  shield: ['#####', '#####', '#####', '.###.', '..#..'],
 };
 const MP_SESSION = 'functionFighter.mp';
 const MP_NAME = 'functionFighter.name';
 
 // Auswahlmöglichkeiten der Lobby-Einstellungen (müssen zu ALLOWED_SETTINGS in server.py passen)
 const MP_OPTIONS = {
-  mode: [['turns', 'Runden – nacheinander, mit Bedenkzeit'], ['realtime', 'Echtzeit – feuern, sobald nachgeladen']],
-  thinkTime: [[10, '10 Sekunden'], [20, '20 Sekunden'], [30, '30 Sekunden'], [45, '45 Sekunden'], [60, '60 Sekunden']],
-  cooldown: [[2, 'alle 2 Sekunden'], [3, 'alle 3 Sekunden'], [5, 'alle 5 Sekunden']],
-  walls: [['keine', 'keine Wände'], ['wenig', 'wenig'], ['mittel', 'mittel'], ['viel', 'viel']],
+  mode: [['turns', 'Runden'], ['realtime', 'Echtzeit']],
+  thinkTime: [[10, '10 s'], [20, '20 s'], [30, '30 s'], [45, '45 s'], [60, '60 s']],
+  cooldown: [[2, '2 s'], [3, '3 s'], [5, '5 s']],
+  walls: [['keine', 'keine'], ['wenig', 'wenig'], ['mittel', 'mittel'], ['viel', 'viel']],
 };
 
 const mp = {
@@ -61,8 +71,9 @@ const mpMe = () => mpPlayer(mp.playerId);
 const mpIsHost = () => !!mp.lobby && mp.lobby.hostId === mp.playerId;
 const mpAuth = extra => ({ code: mp.code, playerId: mp.playerId, token: mp.token, ...extra });
 const mpRadius = p => MP_RADIUS[p.lives] || MP_RADIUS[1];
-const hearts = lives => '♥'.repeat(Math.max(0, lives)) + '♡'.repeat(Math.max(0, 3 - lives));
+const hearts = lives => icon('heart').repeat(Math.max(0, lives)) + icon('heart', 'empty').repeat(Math.max(0, 3 - lives));
 const mpSymbol = p => MP_SYMBOLS[p.slot] || '●';
+const mpSymbolIcon = p => icon(MP_ICONS[p.slot] || 'circle');
 const mpTeammate = (a, b) => !!a && !!b && a.team !== null && a.team !== undefined && a.team === b.team;
 
 async function mpApi(path, body) {
@@ -70,7 +81,7 @@ async function mpApi(path, body) {
     const res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     return await res.json();
   } catch {
-    return { ok: false, error: 'Der Server antwortet nicht. Läuft start.bat noch?' };
+    return { ok: false, error: 'Server antwortet nicht (start.bat?)' };
   }
 }
 
@@ -88,7 +99,7 @@ function mpClearSession() {
 function mpReadName() {
   const name = ui.playerName.value.trim();
   if (!name) {
-    mpShowError('Trag zuerst deinen Namen ein.');
+    mpShowError('Name fehlt');
     const field = document.getElementById('mp-name') || ui.playerName;   // die Kopfzeile ist gesperrt, solange das Fenster offen ist
     field.focus();
     field.classList.add('flash');
@@ -115,7 +126,7 @@ async function mpJoin() {
   const name = mpReadName();
   if (!name) return;
   const code = (document.getElementById('mp-code').value || '').trim().toUpperCase();
-  if (code.length !== 4) { mpShowError('Der Lobby-Code hat 4 Zeichen.'); return; }
+  if (code.length !== 4) { mpShowError('Code hat 4 Zeichen'); return; }
   const res = await mpApi('/api/join', { code, name });
   if (res.ok) mpBegin(res);
   else mpShowError(res.error);
@@ -134,7 +145,7 @@ function mpBegin(res) {
 // Verlassen. restore = false: der Aufrufer startet selbst einen anderen Modus.
 function mpLeave(restore = true) {
   if (mp.code) mpApi('/api/leave', mpAuth());
-  mpReset('Du hast die Lobby verlassen.', restore);
+  mpReset('Lobby verlassen', restore);
 }
 
 // Alles zurücksetzen (Lobby verlassen, rausgeflogen oder Server weg)
@@ -161,7 +172,7 @@ function mpConnect() {
   es.onmessage = event => mpHandle(JSON.parse(event.data));
   es.onopen = () => { mp.connLost = false; mpRenderCard(); };
   es.onerror = () => {
-    if (es.readyState === EventSource.CLOSED) mpReset('Die Lobby gibt es nicht mehr (beendet oder Server gestoppt).');
+    if (es.readyState === EventSource.CLOSED) mpReset('Lobby beendet');
     else { mp.connLost = true; mpRenderCard(); }   // der Browser verbindet sich von selbst neu
   };
 }
@@ -194,10 +205,9 @@ function mpEnterGame() {
   Object.assign(state, { mode: 'multi', status: 'playing', shot: null, trails: [], particles: [], enemies: [], shotsFired: 0 });
   ui.overlay.hidden = true;
   mpSyncGame(null);
-  showCard({ num: 'MULTIPLAYER', name: `Lobby ${lobby.code}`, task: '' });
+  showCard({ num: 'MULTIPLAYER', name: `Lobby ${lobby.code}` });
   buildLevelSelect();
-  const me = mpMe();
-  showMessage(me ? `Die Runde beginnt! Du bist Spieler ${me.slot + 1} (${me.colorName}).` : 'Die Runde beginnt!', 'good');
+  showMessage('Los!', 'good');
   ui.input.focus();
 }
 
@@ -213,12 +223,12 @@ function mpSyncGame(prev) {
     const old = prev && prev.players.find(q => q.id === p.id);
     if (!old || old.posVersion === p.posVersion || !p.alive) continue;
     spawnParticles(toCanvasX(p.x), toCanvasY(p.y), 16, [p.color, '#ffffff'], 160);   // taucht hier wieder auf
-    if (p.id === mp.playerId) showMessage(`Getroffen! Du hast noch ${p.lives} Leben und bist weggesprungen.`, 'error');
+    if (p.id === mp.playerId) showMessage('Getroffen!', 'error');
   }
   const me = mpMe();
   if (!me) return;
   const oldMe = prev && prev.players.find(q => q.id === me.id);
-  if (oldMe && oldMe.alive && !me.alive) showMessage('Du bist raus! Schau zu, wer gewinnt.', 'error');
+  if (oldMe && oldMe.alive && !me.alive) showMessage('Du bist raus', 'error');
   state.player = { x: me.x, y: me.y };
 }
 
@@ -228,8 +238,8 @@ function mpSyncGame(prev) {
 function mpCanFire() {
   const lobby = mp.lobby;
   const me = mpMe();
-  if (!lobby || lobby.phase !== 'playing' || !me) return { ok: false, text: lobby && lobby.phase === 'over' ? 'Runde vorbei.' : '' };
-  if (!me.alive) return { ok: false, text: 'Du bist raus – schau zu, wer gewinnt.' };
+  if (!lobby || lobby.phase !== 'playing' || !me) return { ok: false, text: lobby && lobby.phase === 'over' ? 'Runde vorbei' : '' };
+  if (!me.alive) return { ok: false, text: 'Du bist raus' };
   const now = mpNow();
   if (lobby.settings.mode === 'turns') {
     if (lobby.busy) return { ok: false, text: 'Schuss fliegt …' };
@@ -237,13 +247,13 @@ function mpCanFire() {
     const left = turn && turn.deadline ? Math.max(0, Math.ceil((turn.deadline - now) / 1000)) : 0;
     if (!turn || turn.playerId !== me.id) {
       const who = turn && mpPlayer(turn.playerId);
-      return { ok: false, text: who ? `${who.name} ist am Zug (${left} s)` : 'Warte …' };
+      return { ok: false, text: who ? `${who.name} · ${left} s` : 'Warte …' };
     }
-    return { ok: true, text: `DEIN ZUG – noch ${left} s` };
+    return { ok: true, text: `DEIN ZUG · ${left} s` };
   }
   const wait = (me.nextFire - now) / 1000;
-  if (wait > 0) return { ok: false, text: `Nachladen … ${formatNumber(wait, 1)} s` };
-  return { ok: true, text: 'FEUER BEREIT!' };
+  if (wait > 0) return { ok: false, text: `Nachladen ${formatNumber(wait, 1)} s` };
+  return { ok: true, text: 'FEUER!' };
 }
 
 // Punkte für den Server ausdünnen (zum Zeichnen reicht alle 0,08 Kurvenlänge)
@@ -263,11 +273,11 @@ async function mpFire() {
   if (!can.ok || mp.firing) { if (can.text) showMessage(can.text, 'error'); return; }
   const input = ui.input.value;
   const result = compileShot(input);
-  if (!result.ok) { showMessage(result.error, 'error'); return; }
+  if (!result.ok) { rejectShot(result.error); return; }
   const blocked = blockedTypes(result.types);
-  if (blocked.length) { showMessage(`In den Einstellungen deaktiviert: ${typeNames(blocked)}.`, 'error'); return; }
+  if (blocked.length) { rejectShot(`Aus: ${typeNames(blocked)}`); return; }
   const curve = buildCurve(result.shape, state.player, state.map.grid, result.dir);
-  if (curve.error) { showMessage(curve.error, 'error'); return; }
+  if (curve.error) { rejectShot(curve.error); return; }
 
   const arm = curve.arms[0];
   const me = mpMe();
@@ -289,7 +299,7 @@ async function mpFire() {
   mp.firing = false;
   if (res.ok) {
     rememberInput(input);
-    showMessage('Schuss! ' + originInfo(curve) + ' ' + lengthInfo(curve.arms), 'good');
+    showMessage('');
   }
   else showMessage(res.error, 'error');
   updateHUD();
@@ -307,7 +317,7 @@ function mpOnShot(shot) {
   if (mp.shots.length > MP_KEEP_SHOTS) mp.shots.shift();
   if (!shooter) return;
   spawnParticles(toCanvasX(shooter.x), toCanvasY(shooter.y), 14, ['#fff3a8', shooter.color, '#ffffff'], 220);
-  if (shooter.id !== mp.playerId) showMessage(`${shooter.name} feuert: f(x) = ${shot.input}`);
+  if (shooter.id !== mp.playerId) showMessage(`${shooter.name}: ${shot.input}`);
 }
 
 /* ---------- Zeichnen (wird von draw() in script.js aufgerufen) ---------- */
@@ -343,39 +353,72 @@ function mpTrailKey() {
   return mp.shots.filter(s => s.ended).map(s => s.id).join(',');
 }
 
+// Farbe a mit Anteil t über Farbe b gelegt (beide '#rrggbb') – deckend, damit sich Pixel nicht aufaddieren
+function mpMix(a, b, t) {
+  const n = (c, k) => parseInt(c.slice(1 + 2 * k, 3 + 2 * k), 16);
+  return '#' + [0, 1, 2].map(k => Math.round(n(a, k) * t + n(b, k) * (1 - t)).toString(16).padStart(2, '0')).join('');
+}
+
 // Fertige Schüsse als blasse Spur – jeder Spieler mit eigenem Strichmuster
 function mpDrawTrails() {
   for (const shot of mp.shots) {
     if (!shot.ended) continue;
-    ctx.setLineDash(MP_DASH[shot.slot] || []);
-    strokeCurve(shot.points, Infinity, shot.color + '66', 3);
+    const dash = MP_DASH[shot.slot];
+    stampPath(pixelPath(shot.points), Infinity, mpMix(shot.color, COLORS.paper, 0.4), curveWidth(), dash && dash.length ? dash : null);
   }
-  ctx.setLineDash([]);
 }
 
-// Power-ups: Kreis mit Symbol, pulsiert leicht
+// Pixel-Kreis mit Radius R Kunst-Pixeln: Füllung (darf durchsichtig sein) und 1 Pixel Rand
+function mpDiscSprite(R, fillColor, lineColor) {
+  const key = `disc|${R}|${fillColor}|${lineColor}`;
+  if (spriteCache.has(key)) return spriteCache.get(key);
+  const size = 2 * R;
+  const sprite = document.createElement('canvas');
+  sprite.width = sprite.height = size;
+  const g = sprite.getContext('2d');
+  const inside = (x, y) => x >= 0 && y >= 0 && x < size && y < size && (x + 0.5 - R) ** 2 + (y + 0.5 - R) ** 2 <= R * R;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (!inside(x, y)) continue;
+      const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
+      g.fillStyle = edge ? lineColor : fillColor;
+      g.fillRect(x, y, 1, 1);
+    }
+  }
+  spriteCache.set(key, sprite);
+  return sprite;
+}
+
+// Ring aus Kunst-Pixeln um (ci, cj); segments > 0: gestrichelt und drehend
+function mpRing(ci, cj, R, color, segments = 0) {
+  const turn = performance.now() / 1500;
+  ctx.fillStyle = color;
+  for (let j = -R - 1; j <= R; j++) {
+    for (let i = -R - 1; i <= R; i++) {
+      const d = Math.hypot(i + 0.5, j + 0.5);
+      if (Math.abs(d - R) > 0.5) continue;
+      if (segments && Math.floor((Math.atan2(j + 0.5, i + 0.5) / (2 * Math.PI) + turn) * segments * 2) % 2) continue;
+      ctx.fillRect((ci + i) * pix.K, (cj + j) * pix.K, pix.K, pix.K);
+    }
+  }
+}
+
+// Power-ups: Blase mit Bild, schwebt leicht auf und ab
 function mpDrawPowerups() {
-  const pulse = 1 + 0.08 * Math.sin(performance.now() / 250);
+  const bob = Math.round(Math.sin(performance.now() / 300));
   for (const u of mp.lobby.powerups || []) {
     const look = POWERUP_LOOK[u.kind];
     if (!look) continue;
-    const X = toCanvasX(u.x);
-    const Y = toCanvasY(u.y);
-    const R = POWERUP_RADIUS * UNIT * pulse;
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(X, Y, R, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = look.color;
-    ctx.stroke();
-    ctx.font = '800 15px "Segoe UI Emoji", "Segoe UI Symbol", system-ui, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = look.color;
-    ctx.fillText(look.icon, X, Y + 1);
-    ctx.restore();
+    const R = Math.max(4, Math.round(POWERUP_RADIUS * pix.A));
+    const ci = Math.round(artX(u.x));
+    const cj = Math.round(artY(u.y)) + bob;
+    blit(mpDiscSprite(R, '#ffffff', look.color), ci - R, cj - R);
+    if (look.sprite) {
+      const sprite = spriteFromRows('pu|' + u.kind, POWERUP_SPRITES[look.sprite], { '#': look.color });
+      blit(sprite, ci - Math.floor(sprite.width / 2), cj - Math.floor(sprite.height / 2));
+    } else {
+      pixelText(look.text, ci * pix.K, cj * pix.K + 5 * pix.S, look.color, { align: 'center' });
+    }
   }
 }
 
@@ -386,124 +429,85 @@ function mpDraw() {
   mpDrawBanner();
 }
 
-// Ein fliegender Schuss mit leuchtender Spitze
+// Ein fliegender Schuss mit funkelnder Spitze
 function mpDrawShot(shot) {
   if (shot.progress <= 0) return;
-  strokeCurve(shot.points, shot.progress, COLORS.curveHalo, LINE_WIDTH * UNIT + 5);
-  const tip = strokeCurve(shot.points, shot.progress, shot.color, LINE_WIDTH * UNIT);
-  if (!tip) return;
-  const X = Math.round(toCanvasX(tip.x));
-  const Y = Math.round(toCanvasY(tip.y));
-  ctx.fillStyle = shot.color;
-  ctx.fillRect(X - 7, Y - 7, 14, 14);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(X - 3, Y - 3, 6, 6);
+  const cells = pixelPath(shot.points);
+  stampPath(cells, shot.progress, COLORS.curveHalo, haloWidth());
+  const tip = stampPath(cells, shot.progress, shot.color, curveWidth());
+  if (tip && shot.progress < shot.length) drawSparkle(Math.round(tip.x / pix.K), Math.round(tip.y / pix.K), shot.color);
+}
+
+// Pixel-Icon passend zur Schrift (1 Raster-Pixel = 2 · pix.T Bildschirmpixel, ganzzahlig → scharf), linke obere Ecke (x, y)
+function mpSmallIcon(name, x, y, color) {
+  const sprite = spriteFromRows('icon|' + name + '|' + color, ICONS[name], { '#': color });
+  ctx.drawImage(sprite, Math.round(x), Math.round(y), sprite.width * 2 * pix.T, sprite.height * 2 * pix.T);
 }
 
 function mpDrawPlayers() {
   const lobby = mp.lobby;
   if (!lobby) return;
+  const { K, T, S } = pix;
+  const gap = 19 * T;   // Symbol (7 Raster-Pixel à 2 · T) + Abstand bis zum Namen
   const turnId = lobby.settings.mode === 'turns' && lobby.turn && !lobby.busy ? lobby.turn.playerId : null;
   for (const p of lobby.players) {
     if (!p.alive) continue;
     const isMe = p.id === mp.playerId;
     const dark = MP_DARK[p.color] || COLORS.ink;
-    const r = mpRadius(p) * UNIT;
-    const X = Math.round(toCanvasX(p.x));
-    const Y = Math.round(toCanvasY(p.y));
-    ctx.save();
+    const R = Math.max(3, Math.round(mpRadius(p) * pix.A));
+    const ci = Math.round(artX(p.x));
+    const cj = Math.round(artY(p.y));
 
-    // Trefferfläche (so groß wie der Spieler gerade ist)
-    ctx.beginPath();
-    ctx.arc(X, Y, r, 0, Math.PI * 2);
-    ctx.fillStyle = p.color + '33';
-    ctx.fill();
-    ctx.lineWidth = isMe ? 4 : 2;
-    ctx.strokeStyle = p.color;
-    ctx.stroke();
+    // Trefferfläche (so groß wie der Spieler gerade ist), Schild und – wer am Zug ist – ein drehender Ring
+    blit(mpDiscSprite(R, p.color + '33', p.color), ci - R, cj - R);
+    if (p.shield) mpRing(ci, cj, R + 1, POWERUP_LOOK.shield.color);
+    if (p.id === turnId) mpRing(ci, cj, R + 3, dark, 8);
 
-    // Wer am Zug ist, bekommt einen drehenden Ring
-    if (p.id === turnId) {
-      ctx.setLineDash([6, 6]);
-      ctx.lineDashOffset = -performance.now() / 40;
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = dark;
-      ctx.beginPath();
-      ctx.arc(X, Y, r + 8, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
+    // Jeder schaut in seine eigene x-Richtung (wer gespiegelt spielt, schaut in der Welt nach links)
+    const box = drawWizard(ci, cj, p.color, dark, p.color, mirrorOf(p) * viewMirror());
+    const top = Math.min(box.top, cj - R - (p.id === turnId ? 4 : 0));
 
-    // Schild: zweiter, grauer Ring
-    if (p.shield) {
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = POWERUP_LOOK.shield.color;
-      ctx.beginPath();
-      ctx.arc(X, Y, r + 4, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    const sprite = spriteFromRows('mp' + p.color, PLAYER_SPRITE, { '#': p.color, 'o': '#ffffff', 'd': dark });
-    const scale = r * 1.4 / sprite.width;
-    const w = sprite.width * scale;
-    const h = sprite.height * scale;
-    ctx.drawImage(sprite, X - w / 2, Y - h / 2, w, h);
-
-    // Name und Leben darüber
-    const top = Y - r - (p.id === turnId ? 12 : 5);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = COLORS.paper;
-    ctx.font = '700 16px system-ui, "Segoe UI", sans-serif';
-    ctx.fillStyle = p.color;
-    label(hearts(p.lives), X, top);
-    ctx.font = (isMe ? '800 15px' : '700 14px') + ' system-ui, "Segoe UI", sans-serif';
-    ctx.fillStyle = dark;
-    label(`${mpSymbol(p)} ${isMe ? 'DU · ' : ''}${p.name}${p.double ? ' ×2' : ''}`, X, top - 17);
+    // Leben als Herzen, darüber Symbol + Name, darüber das Team
+    drawHearts(ci, top - 1, p.lives, 3);
+    const name = `${isMe ? 'DU · ' : ''}${p.name}${p.double ? ' ×2' : ''}`;
+    const w = textWidth(name) + gap;
+    const x = Math.round(ci * K - w / 2);
+    const base = Math.round((top - 6) * K - 2 * S);
+    mpSmallIcon(MP_ICONS[p.slot] || 'circle', x, base - 14 * T, dark);
+    pixelText(name, x + gap, base, dark, { outline: COLORS.paper });
     if (lobby.teamsActive && p.team !== null) {
-      ctx.font = '600 12px system-ui, "Segoe UI", sans-serif';
-      ctx.fillStyle = COLORS.label;
-      label(`Team ${TEAM_NAMES[p.team]}`, X, top - 34);
+      pixelText(`Team ${TEAM_NAMES[p.team]}`, ci * K, base - 13 * S, COLORS.label, { align: 'center', outline: COLORS.paper });
     }
-    ctx.restore();
   }
 }
 
-// Kasten oben links: wer bin ich, darf ich feuern?
+// Kasten in einer Ecke: wer bin ich, darf ich feuern?
 function mpDrawBanner() {
   const me = mpMe();
   if (!me) return;
+  const { K, T, S } = pix;
   const dark = MP_DARK[me.color] || COLORS.ink;
   const status = mpCanFire();
   const team = mp.lobby.teamsActive && me.team !== null ? ` · TEAM ${TEAM_NAMES[me.team].toUpperCase()}` : '';
-  const title = `${mpSymbol(me)} DU BIST SPIELER ${me.slot + 1} · ${me.colorName.toUpperCase()}${team}`;
-  ctx.save();
-  ctx.font = '800 16px system-ui, "Segoe UI", sans-serif';
-  const w = Math.max(ctx.measureText(title).width, ctx.measureText(status.text).width) + 28;
+  const title = `SPIELER ${me.slot + 1} · ${me.colorName.toUpperCase()}${team}`;
+  const w = Math.round(Math.max(textWidth(title) + 19 * T, textWidth(status.text)) + 22 * S);
+  const h = Math.round(34 * S);
   // In eine Ecke, in der kein Spieler (samt Name darüber) und kein Power-up liegt –
   // der Reihe nach: oben links, unten links, unten rechts, oben rechts
   const things = [
-    ...mp.lobby.players.filter(p => p.alive).map(p => ({ x: toCanvasX(p.x), y: toCanvasY(p.y) - 20, rx: 45, ry: 50 })),
-    ...(mp.lobby.powerups || []).map(u => ({ x: toCanvasX(u.x), y: toCanvasY(u.y), rx: 20, ry: 20 })),
+    ...mp.lobby.players.filter(p => p.alive).map(p => ({ x: artX(p.x) * K, y: artY(p.y) * K - 8 * K, rx: 18 * K, ry: 22 * K })),
+    ...(mp.lobby.powerups || []).map(u => ({ x: artX(u.x) * K, y: artY(u.y) * K, rx: 8 * K, ry: 8 * K })),
   ];
-  const free = (left, top) => !things.some(t => t.x + t.rx > left && t.x - t.rx < left + w && t.y + t.ry > top && t.y - t.ry < top + 62);
-  const corners = [[12, 10], [12, HEIGHT - 72], [WIDTH - w - 16, HEIGHT - 72], [WIDTH - w - 16, 10]];
+  const free = (left, top) => !things.some(t => t.x + t.rx > left && t.x - t.rx < left + w && t.y + t.ry > top && t.y - t.ry < top + h);
+  const m = 10 * T;
+  const corners = [[m, m], [m, canvas.height - h - m], [canvas.width - w - m, canvas.height - h - m], [canvas.width - w - m, m]];
   const [left, top] = corners.find(([l, t]) => free(l, t)) || corners[0];
-  ctx.fillStyle = COLORS.ink;
-  ctx.fillRect(left + 4, top + 4, w, 58);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(left, top, w, 58);
+  pixelPanel(left, top, w, h, COLORS.parchment);
   ctx.fillStyle = me.color;
-  ctx.fillRect(left, top, 8, 58);
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = dark;
-  ctx.fillText(title, left + 16, top + 18);
-  ctx.font = '700 15px system-ui, "Segoe UI", sans-serif';
-  ctx.fillStyle = status.ok ? COLORS.curve : COLORS.label;
-  ctx.fillText(status.text, left + 16, top + 42);
-  ctx.restore();
+  ctx.fillRect(left, top, 4 * T, h);
+  mpSmallIcon(MP_ICONS[me.slot] || 'circle', left + 10 * S, top + 13 * S - 14 * T, dark);
+  pixelText(title, left + 10 * S + 19 * T, top + 13 * S, dark);
+  pixelText(status.text, left + 10 * S, top + 29 * S, status.ok ? COLORS.curve : COLORS.label);
 }
 
 // Text für die Mausanzeige über einem Spieler (oder null)
@@ -513,13 +517,12 @@ function mpHoverText(m) {
   if (!lobby || !me) return null;
   const item = (lobby.powerups || []).find(u => Math.hypot(u.x - m.x, u.y - m.y) <= POWERUP_RADIUS);
   if (item && POWERUP_LOOK[item.kind]) {
-    return `${POWERUP_LOOK[item.kind].name} bei (${formatNumber(item.x - me.x)} | ${formatNumber(item.y - me.y)}) – mit deiner Kurve berühren`;
+    return `${POWERUP_LOOK[item.kind].name} ${placeText(item.x, item.y)}`;
   }
   const p = lobby.players.find(q => q.alive && Math.hypot(q.x - m.x, q.y - m.y) <= mpRadius(q));
   if (!p) return null;
-  if (p.id === me.id) return `Das bist du – ${mpSymbol(p)} Spieler ${p.slot + 1} (${p.colorName}) · ${p.lives} Leben`;
-  const mate = mpTeammate(p, me) ? ' · dein Team (kein Schaden)' : '';
-  return `${mpSymbol(p)} ${p.name} bei (${formatNumber(p.x - me.x)} | ${formatNumber(p.y - me.y)}) · ${p.lives} Leben${mate}`;
+  if (p.id === me.id) return 'Du (0 | 0)';
+  return `${p.name} ${placeText(p.x, p.y)}${mpTeammate(p, me) ? ' · Team' : ''}`;
 }
 
 /* ---------- Statuszeile & Seitenleiste ---------- */
@@ -542,7 +545,7 @@ function mpUpdateHUD() {
   ui.fireBar.classList.toggle('my-turn', can.ok);
   // Im Runden-Modus sieht man „Dein Zug“ auch, wenn ein anderer Tab vorne ist
   const myTurn = can.ok && mp.lobby && mp.lobby.settings.mode === 'turns';
-  document.title = myTurn ? '▶ Dein Zug! – Function Fighter' : 'Function Fighter';
+  document.title = myTurn ? '▶ Dein Zug – Function Fighter' : 'Function Fighter';
   // Kommt man an die Reihe, springt der Cursor ins Eingabefeld (wenn kein Fenster offen ist)
   if (myTurn && !mp.wasMyTurn && !document.querySelector('dialog[open]')) ui.input.focus();
   mp.wasMyTurn = myTurn;
@@ -559,11 +562,11 @@ function mpPlayerRow(p, lobby, kick = false) {
   const lives = lobby.phase === 'lobby' ? '' : `<span class="mp-hearts">${hearts(p.alive ? p.lives : 0)}</span>`;
   const team = lobby.teamsActive && p.team !== null ? ` · Team ${TEAM_NAMES[p.team]}` : '';
   return `<li class="${p.id === mp.playerId ? 'me' : ''}" style="--pc:${p.color}">
-    <span class="mp-swatch">${mpSymbol(p)}</span>
-    <span class="mp-name">${esc(p.name)}${p.id === mp.playerId ? ' (du)' : ''}<small>Spieler ${p.slot + 1} · ${esc(p.colorName)}${team}</small></span>
-    ${lives}<span class="mp-score" title="Siege · Treffer in dieser Lobby">🏆 ${p.wins} · 🎯 ${p.hits}</span>
+    <span class="mp-swatch">${mpSymbolIcon(p)}</span>
+    <span class="mp-name">${esc(p.name)}${p.id === mp.playerId ? ' (du)' : ''}${team}</span>
+    ${lives}<span class="mp-score" title="Siege · Treffer in dieser Lobby">${icon('trophy')} ${p.wins} · ${icon('target')} ${p.hits}</span>
     ${tags.length ? `<span class="mp-tags">${tags.join(' · ')}</span>` : ''}
-    ${kick && p.id !== mp.playerId ? `<button class="btn btn-small mp-kick" data-act="kick" data-id="${p.id}" title="Aus der Lobby entfernen">✕</button>` : ''}</li>`;
+    ${kick && p.id !== mp.playerId ? `<button class="btn btn-small mp-kick" data-act="kick" data-id="${p.id}" title="Entfernen">${icon('close')}</button>` : ''}</li>`;
 }
 
 function mpRenderCard() {
@@ -571,19 +574,16 @@ function mpRenderCard() {
   const me = mpMe();
   if (!lobby || !me) return;
   ui.mpCardHead.innerHTML = `
-    <div class="level-num">MULTIPLAYER · LOBBY ${esc(lobby.code)}</div>
+    <div class="level-num">LOBBY ${esc(lobby.code)}</div>
     <div class="mp-you" style="--pc:${me.color}">
-      <span class="mp-swatch big">${mpSymbol(me)}</span>
-      <div><small>Du bist</small><b>SPIELER ${me.slot + 1} · ${esc(me.colorName.toUpperCase())}</b>
+      <span class="mp-swatch big">${mpSymbolIcon(me)}</span>
+      <div><b>SPIELER ${me.slot + 1} · ${esc(me.colorName.toUpperCase())}</b>
         <span>${esc(me.name)}${lobby.teamsActive && me.team !== null ? ` · Team ${TEAM_NAMES[me.team]}` : ''}</span></div>
     </div>`;
-  const log = [...lobby.log].reverse().slice(0, 6).map(t => `<li>${esc(t)}</li>`).join('');
-  const rule = lobby.settings.mode === 'turns'
-    ? `Runden · ${lobby.settings.thinkTime} s Bedenkzeit` : `Echtzeit · Feuer alle ${lobby.settings.cooldown} s`;
+  const log = [...lobby.log].reverse().slice(0, 5).map(t => `<li>${esc(t)}</li>`).join('');
   ui.mpCardBody.innerHTML = `
-    ${mp.connLost ? '<p class="warning">Verbindung unterbrochen – verbinde neu …</p>' : ''}
+    ${mp.connLost ? '<p class="warning">Verbindung weg …</p>' : ''}
     <ul class="mp-players">${lobby.players.map(p => mpPlayerRow(p, lobby)).join('')}</ul>
-    <p class="small">${rule} · Wände: ${esc(lobby.settings.walls)}${lobby.settings.wallsBreakable ? '' : ' (unzerstörbar)'}${lobby.settings.powerups ? ' · Power-ups' : ''}</p>
     ${log ? `<ul class="mp-log">${log}</ul>` : ''}`;
 }
 
@@ -601,8 +601,8 @@ function mpOpenDialog() {
 // Links für die anderen PCs (die Netzwerk-Adressen des Server-PCs)
 function mpJoinLinks() {
   if (!mp.info || !mp.info.addresses || !mp.info.addresses.length) return '';
-  const links = mp.info.addresses.map(ip => `<code>http://${esc(ip)}:${mp.info.port}</code>`).join(' oder ');
-  return `<p class="small mp-links">Die anderen PCs öffnen im Browser: ${links}</p>`;
+  const links = mp.info.addresses.map(ip => `<code>http://${esc(ip)}:${mp.info.port}</code>`).join(' ');
+  return `<p class="small mp-links">Link für die anderen: ${links}</p>`;
 }
 
 function mpShowError(text) {
@@ -619,30 +619,21 @@ function mpSelect(key, value, enabled) {
 function mpRenderDialog() {
   if (!ui.mpDialog.open) return;
   let html;
+  const close = `<button class="btn btn-small dlg-close" data-act="close" title="Schließen">${icon('close')}</button>`;
   if (!mp.available) {
-    html = `
-      <h2>MULTIPLAYER</h2>
-      <p>Für den Multiplayer braucht es den kleinen Server, der beim Spiel dabei ist:</p>
-      <ol class="rules">
-        <li>Im Spielordner <b>start.bat</b> doppelklicken.</li>
-        <li>Im schwarzen Fenster steht ein Link wie <code>http://192.168.…:8000</code>.</li>
-        <li>Diesen Link auf jedem PC im Browser öffnen, der mitspielen soll.</li>
-      </ol>
-      <p class="small">Gerade ist das Spiel als Datei geöffnet (file://) – deshalb geht es hier noch nicht.</p>
-      <div class="settings-actions"><button class="btn" data-act="close">Schließen</button></div>`;
+    html = `${close}
+      <h2>Multiplayer</h2>
+      <p><code>start.bat</code> starten und den Link öffnen, der dort steht.</p>`;
   } else if (!mp.code) {
     const name = ui.playerName.value.trim();
-    html = `
-      <h2>MULTIPLAYER</h2>
-      <p class="small">Live mit bis zu 4 Spielern im selben Netzwerk.</p>
-      ${mpJoinLinks()}
-      <label class="mp-field">Dein Name <span class="small">(derselbe wie oben links)</span>
+    html = `${close}
+      <h2>Multiplayer</h2>
+      <label class="mp-field" title="Name">${icon('user')}
         <input id="mp-name" maxlength="16" value="${esc(name)}" placeholder="Name" autocomplete="nickname" spellcheck="false"></label>
       <div class="mp-choice">
         <div class="mp-box">
           <h3>Neue Lobby</h3>
-          <p class="small">Du bist der Host und stellst die Regeln ein.</p>
-          <button class="btn btn-primary" data-act="create">Lobby erstellen</button>
+          <button class="btn btn-primary" data-act="create">Erstellen</button>
         </div>
         <div class="mp-box">
           <h3>Beitreten</h3>
@@ -650,10 +641,10 @@ function mpRenderDialog() {
           <button class="btn" data-act="join">Beitreten</button>
         </div>
       </div>
-      <p class="warning" id="mp-error">${esc(mp.error)}</p>
-      <div class="settings-actions"><button class="btn" data-act="close">Schließen</button></div>`;
+      ${mpJoinLinks()}
+      <p class="warning" id="mp-error">${esc(mp.error)}</p>`;
   } else if (!mp.lobby) {
-    html = '<h2>MULTIPLAYER</h2><p>Verbinde mit der Lobby …</p><div class="settings-actions"><button class="btn" data-act="leave">Abbrechen</button></div>';
+    html = `<h2>Multiplayer</h2><p>Verbinde …</p><div class="settings-actions"><button class="btn" data-act="leave">Abbrechen</button></div>`;
   } else {
     const lobby = mp.lobby;
     const host = mpIsHost();
@@ -661,50 +652,39 @@ function mpRenderDialog() {
     const s = lobby.settings;
     const slots = [0, 1, 2, 3].map(slot => {
       const p = lobby.players.find(q => q.slot === slot);
-      return p ? mpPlayerRow(p, lobby, host && lobby.phase !== 'playing') : `<li class="free"><span class="mp-swatch"></span><span class="mp-name">frei<small>Spieler ${slot + 1}</small></span></li>`;
+      return p ? mpPlayerRow(p, lobby, host && lobby.phase !== 'playing') : `<li class="free"><span class="mp-swatch"></span><span class="mp-name">frei</span></li>`;
     }).join('');
     const winner = lobby.phase === 'over' ? mpPlayer(lobby.winnerId) : null;
-    let footer;
-    if (lobby.phase === 'playing') footer = '<p class="small">Die Runde läuft.</p>';
-    else if (host) {
-      footer = `<button class="btn btn-primary" data-act="start"${lobby.players.length < 2 ? ' disabled' : ''}>${lobby.phase === 'over' ? 'Neue Runde starten' : 'Spiel starten'}</button>` +
-        (lobby.players.length < 2 ? '<p class="small">Warte auf mindestens einen Mitspieler …</p>' : '');
-    } else footer = '<p class="small">Warte, bis der Host die Runde startet …</p>';
-    html = `
-      <h2>LOBBY</h2>
+    let footer = '';
+    if (host && lobby.phase !== 'playing') {
+      footer = `<button class="btn btn-primary" data-act="start"${lobby.players.length < 2 ? ' disabled' : ''}>${icon('play')} ${lobby.phase === 'over' ? 'Neue Runde' : 'Start'}</button>`;
+    } else if (!host && lobby.phase !== 'playing') footer = '<p class="small">Warte auf den Host …</p>';
+    const check = (key, text) => `<label class="mp-check"><input type="checkbox" data-setting="${key}"${s[key] ? ' checked' : ''}${editable ? '' : ' disabled'}> ${text}</label>`;
+    html = `${close}
+      <h2>Lobby</h2>
+      <div class="mp-cols"><div>
       <div class="mp-code-row"><span class="mp-code-big">${esc(lobby.code)}</span>
-        <div><p class="small">Diesen Code geben deine Mitspieler unter „Beitreten“ ein.</p>
-          <button class="btn btn-small" data-act="copy-code">Code kopieren</button></div></div>
+        <button class="btn btn-small" data-act="copy-code" title="Code kopieren">${icon('copy')}</button></div>
       ${mpJoinLinks()}
-      ${lobby.phase === 'over' ? `<p class="mp-winner">${winner ? `🏆 ${esc(winner.name)} hat die letzte Runde gewonnen.` : 'Die letzte Runde ging unentschieden aus.'}</p>` : ''}
+      ${winner ? `<p class="mp-winner">${icon('trophy')} ${esc(winner.name)}</p>` : ''}
       <ul class="mp-players">${slots}</ul>
       ${mpRanking(lobby, host)}
-      <fieldset class="endless-settings mp-settings">
-        <legend>Einstellungen${host ? '' : ' – stellt der Host ein'}</legend>
-        <label>Feuern ${mpSelect('mode', s.mode, editable)}</label>
-        ${s.mode === 'turns' ? `<label>Bedenkzeit pro Zug ${mpSelect('thinkTime', s.thinkTime, editable)}</label>`
-          : `<label>Feuer-Takt ${mpSelect('cooldown', s.cooldown, editable)}</label>`}
+      </div><div>
+      <div class="mp-settings">
+        <label>Modus ${mpSelect('mode', s.mode, editable)}</label>
+        ${s.mode === 'turns' ? `<label>Bedenkzeit ${mpSelect('thinkTime', s.thinkTime, editable)}</label>`
+          : `<label>Nachladen ${mpSelect('cooldown', s.cooldown, editable)}</label>`}
         <label>Wände ${mpSelect('walls', s.walls, editable)}</label>
-        <label class="mp-check"><input type="checkbox" data-setting="functionList"${s.functionList ? ' checked' : ''}${editable ? '' : ' disabled'}>
-          Funktionsliste im Spiel erlauben</label>
-        <label class="mp-check"><input type="checkbox" data-setting="wallsBreakable"${s.wallsBreakable ? ' checked' : ''}${editable ? '' : ' disabled'}>
-          Wände zerstörbar – ein Treffer sprengt ein Loch hinein</label>
-        <label class="mp-check"><input type="checkbox" data-setting="symmetric"${s.symmetric ? ' checked' : ''}${editable ? '' : ' disabled'}>
-          Faire Welt – Wände und Startplätze gespiegelt</label>
-        <label class="mp-check"><input type="checkbox" data-setting="teams"${s.teams ? ' checked' : ''}${editable ? '' : ' disabled'}>
-          2 gegen 2 – Team Links gegen Team Rechts (nur mit 4 Spielern)</label>
-        <label class="mp-check"><input type="checkbox" data-setting="powerups"${s.powerups ? ' checked' : ''}${editable ? '' : ' disabled'}>
-          Power-ups: ♥ +1 Leben, 🛡 Schild, ×2 Doppelschuss – mit der Kurve einsammeln</label>
-        <label class="mp-check"><input type="checkbox" data-setting="odeModes"${s.odeModes ? ' checked' : ''}${editable ? '' : ' disabled'}>
-          Profi-Modi y′ und y″ erlauben</label>
-      </fieldset>
-      <p class="small">Jeder hat 3 Leben. Wer getroffen wird, wird kleiner und springt an eine andere Stelle in seiner Hälfte bzw. seinem Viertel.</p>
+        ${check('wallsBreakable', 'Wände zerstörbar')}
+        ${check('symmetric', 'Faire Welt (gespiegelt)')}
+        ${check('teams', '2 gegen 2')}
+        ${check('powerups', `Power-ups ${icon('heart')} ${icon('shield', 'shield')} ×2`)}
+        ${check('functionList', 'Funktionsliste')}
+        ${check('odeModes', 'y′ und y″')}
+      </div>
       <p class="warning" id="mp-error">${esc(mp.error)}</p>
-      <div class="settings-actions">${footer}</div>
-      <div class="settings-actions">
-        <button class="btn" data-act="leave">Lobby verlassen</button>
-        <button class="btn" data-act="close">Schließen</button>
-      </div>`;
+      <div class="settings-actions">${footer}<button class="btn" data-act="leave">Verlassen</button></div>
+      </div></div>`;
   }
   ui.mpDialogBody.innerHTML = html;
 }
@@ -718,8 +698,8 @@ function mpDialogClick(event) {
   else if (act === 'leave') mpLeave();
   else if (act === 'start') mpApi('/api/start', mpAuth()).then(res => { if (!res.ok) mpShowError(res.error); });
   else if (act === 'kick') mpApi('/api/kick', mpAuth({ targetId: event.target.dataset.id })).then(res => { if (!res.ok) mpShowError(res.error); });
-  else if (act === 'copy-code') copyText(mp.code).then(() => { event.target.textContent = 'Kopiert ✓'; });
-  else if (act === 'reset-scores' && confirm('Siege und Treffer aller Spieler auf 0 setzen?')) mpApi('/api/resetscores', mpAuth());
+  else if (act === 'copy-code') copyText(mp.code).then(() => { event.target.innerHTML = icon('check'); });
+  else if (act === 'reset-scores' && confirm('Punkte auf 0 setzen?')) mpApi('/api/resetscores', mpAuth());
 }
 
 function mpDialogChange(event) {
@@ -738,10 +718,10 @@ function mpDialogKey(event) {
 function mpRanking(lobby, host) {
   if (!lobby.players.some(p => p.wins || p.hits)) return '';
   const sorted = [...lobby.players].sort((a, b) => b.wins - a.wins || b.hits - a.hits);
-  const rows = sorted.map((p, i) => `<li style="--pc:${p.color}"><b>${i + 1}.</b> <span class="mp-swatch">${mpSymbol(p)}</span>
-    ${esc(p.name)} <span class="small">– ${p.wins} ${p.wins === 1 ? 'Sieg' : 'Siege'}, ${p.hits} Treffer</span></li>`).join('');
-  return `<div class="mp-ranking"><h3>🏆 Rangliste</h3><ol>${rows}</ol>
-    ${host ? '<button class="btn btn-small" data-act="reset-scores">Punkte zurücksetzen</button>' : ''}</div>`;
+  const rows = sorted.map((p, i) => `<li style="--pc:${p.color}"><b>${i + 1}.</b> <span class="mp-swatch">${mpSymbolIcon(p)}</span>
+    ${esc(p.name)} <span class="mp-score">${icon('trophy')} ${p.wins} · ${icon('target')} ${p.hits}</span></li>`).join('');
+  return `<div class="mp-ranking"><h3>${icon('trophy')} Rangliste</h3><ol>${rows}</ol>
+    ${host ? '<button class="btn btn-small" data-act="reset-scores">Zurücksetzen</button>' : ''}</div>`;
 }
 
 // Kurzer Punktestand als Text (für das Fenster am Rundenende)
@@ -756,22 +736,19 @@ function mpShowGameOver() {
   const lobby = mp.lobby;
   const me = mpMe();
   const box = ui.overlay.querySelector('.overlay-box');
-  let won, title, text;
+  let won, title;
   if (lobby.teamsActive) {
     const team = lobby.winnerTeam;
     won = me && team !== null && me.team === team;
-    title = team === null ? 'UNENTSCHIEDEN' : won ? 'DEIN TEAM HAT GEWONNEN!' : `TEAM ${TEAM_NAMES[team].toUpperCase()} GEWINNT!`;
-    text = team === null ? 'Alle sind raus. ' : `Team ${TEAM_NAMES[team]} hat als Letztes noch Spieler übrig. `;
+    title = team === null ? 'Unentschieden' : won ? 'Sieg!' : `Team ${TEAM_NAMES[team]} gewinnt`;
   } else {
     const winner = mpPlayer(lobby.winnerId);
     won = winner && winner.id === mp.playerId;
-    title = winner ? (won ? 'DU HAST GEWONNEN!' : `${winner.name.toUpperCase()} GEWINNT!`) : 'UNENTSCHIEDEN';
-    text = winner ? `${mpSymbol(winner)} Spieler ${winner.slot + 1} (${winner.colorName}) ist als Letztes übrig. ` : 'Alle sind raus. ';
+    title = winner ? (won ? 'Sieg!' : `${winner.name} gewinnt`) : 'Unentschieden';
   }
   box.className = 'overlay-box ' + (won ? 'won' : 'lost');
   ui.overlayTitle.textContent = title;
-  ui.overlayText.textContent = text + `Siege: ${mpScoreLine(lobby)}. ` +
-    (mpIsHost() ? 'Starte in der Lobby eine neue Runde.' : 'Der Host kann in der Lobby eine neue Runde starten.');
+  ui.overlayText.textContent = mpScoreLine(lobby);
   ui.overlayRetry.hidden = true;
   ui.overlayNewmap.hidden = true;
   ui.overlayNext.hidden = true;

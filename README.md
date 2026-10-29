@@ -11,47 +11,72 @@ deine Formel verstanden hat.
 - **Multiplayer:** `start.bat` doppelklicken (siehe unten). Es braucht nur Python, keine
   weiteren Bibliotheken.
 
-Mit Internetverbindung werden zusätzlich MathJax (schöne Formelvorschau) und die
-Pixel-Schrift geladen. Ohne Internet läuft das Spiel trotzdem; die Vorschau zeigt dann
-den LaTeX-Text.
+Mit Internetverbindung wird zusätzlich MathJax (schöne Formelvorschau) geladen. Ohne
+Internet läuft das Spiel trotzdem; die Vorschau zeigt dann den LaTeX-Text. Die
+Pixel-Schriften liegen im Ordner `fonts/` und funktionieren auch offline.
+
+**Grafik:** mittelalterlicher Fantasy-Pixel-Stil – Burgmauer im Hintergrund, Holzbalken oben,
+Pergament-Tafeln mit Goldnieten, ein Holzrahmen ums Pergament-Spielfeld, Zauberer, Schleime und
+Burgmauern. Texte sind aufs Nötigste gekürzt; Knöpfe zeigen Pixel-Icons (Name beim Draufzeigen).
+Alles ist auflösungsfest: Spielfeld, Figuren, Rahmen, Muster, Icons, Zeilenhöhen und Schrift
+sitzen immer auf ganzen Bildschirmpixeln – bei 100 %, 125 %, 150 %, 175 %, 200 % Skalierung,
+4K und jedem Browser-Zoom bleibt alles scharf. Die Größe der Oberfläche richtet sich nach
+Skalierung und Fenstergröße (bei 150 % auf großen Bildschirmen doppelt so große Pixel). Schrift,
+Knöpfe und Abstände sind 1,5-fach (`--u` in `style.css`), Icons immer ganzzahlig vergrößert.
+Reicht die Breite nicht, zeigen die Reiter oben nur ihre Icons. Die Kurven werden in voller
+Bildschirmauflösung mit rundem, hartkantigem Pinsel gezeichnet (`stampPath`, `curveWidth`).
 
 **Alle Funktionen, die Eingabe-Regeln und das Karten-Format stehen in [`FUNKTIONEN.md`](FUNKTIONEN.md).**
 
 ## So wird geschossen
 
-**Jeder Spieler hat sein eigenes Koordinatensystem.** Die blauen Achsen gehen durch dich,
-du bist immer der Ursprung (0 | 0), und alle Zahlen an den Achsen zählen von dir aus.
-Deine Funktion wird genau so gezeichnet wie im Sandkasten: von dir aus und **nach oben
-oder unten verschoben**, bis sie durch dich geht. In deinem Koordinatensystem ist das
+**Jeder Spieler hat sein eigenes Koordinatensystem.** Die blauen Achsen gehen durch dich:
+Du bist immer der **Nullpunkt (0 | 0)**, alle Zahlen an den Achsen zählen von dir aus. Ein
+gemeinsames Koordinatensystem gibt es nicht. **Jeder sieht sich selbst links** und schießt
+**nach rechts**: Wer in der rechten Hälfte steht (im Multiplayer), bekommt das Feld an der
+y-Achse gespiegelt angezeigt. Fährst du mit der Maus übers Feld, siehst du die Position des
+Mauszeigers in deinem Koordinatensystem.
+
+Deine Funktion wird von dir aus gezeichnet und **nur nach oben oder unten verschoben**, damit
+sie genau aus dir herauskommt:
 
 ```
-y = f(x) − f(0)
+y = f(x) − f(0)        für x ≥ 0
 ```
+
+**Nach links schießen:** Schreib `L` (oder `l`) vor die Funktion, z. B. `L x^2/8` oder `lx/2`.
+Dann fliegt die Kurve von dir aus nach links:
+
+```
+y = f(x) − f(0)        für x ≤ 0
+```
+
+`R`/`r` oder gar nichts davor heißt nach rechts (Standard). Auch `f(x) = L x^2` geht. Die
+Taste `← L` bei den Mathe-Tasten schaltet die Richtung um. Bei `L x^2/8` steigt die Kurve
+also nach links an, bei `L x/2` fällt sie nach links (die Steigung bleibt 1/2).
 
 - `x^2` hat seinen Scheitel deshalb immer bei dir, egal wo du auf dem Feld stehst.
-  Dieselbe Funktion hat von jeder Stelle aus dieselbe Form.
 - Ein `+b` am Ende ändert nichts – es fällt beim Verschieben weg.
 - f braucht bei x = 0 einen Wert. Ist f dort nicht definiert (z. B. `1/x`), kannst du
   nicht schießen – die Vorschau sagt es dir, und es kostet nichts.
 - **Treffer:** Die Kurve fliegt durch Gegner hindurch und trifft jeden, den sie berührt.
 - **Ende:** Es gibt keine Reichweiten-Grenze. Der Schuss fliegt, bis er eine Wand trifft
   (dort sprengt er wie bei Graphwar ein Loch hinein), das Feld verlässt, an eine
-  Sprungstelle kommt (z. B. `1/(x-3)` bei x = 3) oder die Funktion nicht mehr definiert ist.
-- **Wie bei Graphwar:** Die Kurve fliegt durch Gegner hindurch und sprengt Löcher in Wände.
+  Unstetigkeit kommt (Pol wie `1/(x-3)` oder Sprung wie `(x-3)/|x-3|` bei x = 3) oder die
+  Funktion nicht mehr definiert ist. Wände werden exakt getroffen (die Kurve wird Kästchen für
+  Kästchen verfolgt).
 - **Anders als bei Graphwar:**
   - **Eigenes Koordinatensystem** pro Spieler (siehe oben) statt eines gemeinsamen.
-  - **Richtung:** Der Schuss fliegt nach rechts. Steht direkt vor **jedem** x ein Minus
-    (`-x`, `(-x)/6`, `sin(-x)`), fliegt er nach links.
   - **sin und cos:** Die Zahl vor x ist höchstens 4 – `sin(4x)` geht, `sin(5x)` nicht.
 - **Nicht im Spiel:** Logarithmen (`ln`, `log`, `lg`) und `arcsin`, `arccos`, `arctan`.
 
 ## Modi (Reiter oben)
 
 - **? Tutorial:** 7 kurze Schritte zum Mitmachen. Es startet beim ersten Besuch automatisch.
-  Hier gibt es den Knopf **📈 Funktionen** (siehe unten).
+  Hier gibt es links neben der Eingabe den Diagramm-Knopf für die Funktionsliste (siehe unten).
 - **▦ Level:** öffnet die Auswahl aller 12 Level (erledigte grün, gesperrte grau). Jedes
   Level erzeugt eine zufällige, garantiert lösbare Karte: Du startest
-  auf einem zufälligen Kreuz des Rasters, dazu kommen Gegner und Wände.
+  auf einem zufälligen Kreuz in der linken Hälfte, dazu kommen Gegner und Wände.
   - **↻ Neustart** spielt dieselbe Karte noch einmal.
   - **🎲 Neue Karte** würfelt eine neue.
   - Im selben Fenster: **📅 Tages-Herausforderung**, **✎ Level-Editor** und **🔑 Karten-Code**
@@ -60,7 +85,7 @@ y = f(x) − f(0)
   Alle 5 Schüsse ziehst du an eine neue Stelle um. Jeder zerstörte Gegner bringt 1 Punkt;
   die beste Kombo (meiste Gegner mit einem Schuss) wird gespeichert. Mit **🧱 Wände: AN/AUS**
   (oder in den Einstellungen) schaltest du die Wände ein und aus – auch mitten im Spiel.
-- **□ Sandkasten:** Du stehst genau in der Mitte bei (0 | 0), ohne Gegner und Wände, und
+- **□ Sandkasten:** Du stehst in der Mitte des Feldes, ohne Gegner und Wände, und
   kannst beliebig viele Funktionen ausprobieren. Die letzten 8 Kurven bleiben zum Vergleichen
   stehen. Ein Klick ins Feld setzt ein Übungsziel; jeder weitere Klick gibt ihm mehr Leben
   (bis 3), danach verschwindet es. **↻ Neustart** räumt alles ab. Die Funktionsliste ist offen.
@@ -83,11 +108,11 @@ Links neben dem Eingabefeld wählst du den Modus:
 | `y″ =` | die **Krümmung**, dazu einen **Startwinkel** | `-y/9` mit 45° ergibt eine Schwingung |
 
 Erlaubt sind `x`, `y` und im Modus y″ zusätzlich `y'` (die Steigung). Die Kurve startet immer in
-dir; die Richtung (→ / ←) wählst du daneben. Gerechnet wird mit dem Runge-Kutta-Verfahren
+dir (0 | 0), bei y″ mit der Steigung aus dem Startwinkel. Gerechnet wird mit dem Runge-Kutta-Verfahren
 (4. Ordnung) – genau auf etwa 6 Nachkommastellen. Im Multiplayer kann der Host die Profi-Modi
 abschalten.
 
-## Mathe-Tasten (⌨)
+## Mathe-Tasten (Tastatur-Knopf)
 
 Der Knopf **⌨** neben dem Eingabefeld blendet Tasten für x, x², xⁿ, √, sin, cos, tan, eˣ, π,
 |x|, Klammern, Rechenzeichen, ⌫ und C ein. Sie fügen an der Cursor-Stelle ein und setzen den
@@ -109,13 +134,12 @@ Cursor gleich in die Klammer – praktisch am Tablet (dort sind sie von Anfang a
 Mit **↑ / ↓** im Eingabefeld holst du deine letzten 30 abgefeuerten Funktionen zurück – praktisch
 zum Nachjustieren. Der Verlauf wird gespeichert.
 
-## Funktionsliste (📈 Funktionen)
+## Funktionsliste (Knopf „Funktionen“)
 
 Eine Liste mit Standardfunktionen: Gerade, Parabel, kubische Funktion, Wurfparabel, Wurzel,
 Bruch, Exponentialfunktion, Sinus, Kosinus, Tangens, Gerade + Welle, Sinus hyperbolicus.
-Jede Karte zeigt einen kleinen Graphen (von dir aus, kräftig ist der geschossene Teil),
-Felder für die Parameter (a, b, …) und die Richtung (→ rechts / ← links). Darunter steht die
-fertige Eingabe mit drei Knöpfen: **Kopieren**, **Einsetzen** (zum Weiter-Anpassen) und
+Jede Karte zeigt einen kleinen Graphen (von dir aus, kräftig ist der geschossene Teil) und
+Felder für die Parameter (a, b, …). Darunter steht die fertige Eingabe mit drei Knöpfen: **Kopieren**, **Einsetzen** (zum Weiter-Anpassen) und
 **Feuer!**. Offen ist die Liste im Tutorial und im Sandkasten, im Multiplayer nur, wenn der
 Host sie in der Lobby erlaubt. In den Leveln und im Endlos-Modus gibt es sie nicht.
 
@@ -139,7 +163,7 @@ Host sie in der Lobby erlaubt. In den Leveln und im Endlos-Modus gibt es sie nic
 | Wände | keine, wenig, mittel, viel |
 | Wände zerstörbar | an (Standard): ein Treffer sprengt ein Loch in die Wand. Aus: Wände bleiben stehen. |
 | Funktionsliste | erlaubt oder nicht |
-| Faire Welt | an (Standard): Wände und Startplätze werden gespiegelt – bei 2 Spielern um die Feldmitte gedreht, bei 3–4 an beiden Achsen. So hat jeder dieselbe Umgebung. Aus: alles zufällig. |
+| Faire Welt | an (Standard): Wände und Startplätze werden gespiegelt – bei 2 Spielern an der y-Achse, bei 3–4 an beiden Achsen. Weil sich jeder links sieht, hat so jeder in seiner Ansicht dieselbe Umgebung. Aus: alles zufällig. |
 | 2 gegen 2 | Teams (nur mit 4 Spielern): Team Links (Spieler 1 + 3) gegen Team Rechts (Spieler 2 + 4). Teamkollegen kann man nicht treffen; gewonnen hat das Team, das als letztes noch jemanden hat. |
 | Power-ups | an (Standard): Auf dem Feld liegen ♥ **+1 Leben**, 🛡 **Schild** (hält einen Treffer ab) und ×2 **Doppelschuss** (der nächste Schuss kostet 2 Leben). Eingesammelt wird, wenn die eigene Kurve sie berührt – wer zuerst da ist. Alle 15 s kommen neue (in der fairen Welt gespiegelt). |
 | Profi-Modi | y′ und y″ erlaubt oder nicht |
@@ -154,7 +178,7 @@ Ist im Runden-Modus jemand nicht verbunden, wird sein Zug nach 3 Sekunden übers
 Rechts im Verlauf steht, wer welche Funktion abgefeuert und wen getroffen hat. Den Namen kann
 man jederzeit oben ändern – alle sehen den neuen Namen sofort.
 
-**Wer bin ich?** Oben links im Spielfeld steht „DU BIST SPIELER 2 · ROT“ samt Zug-/Nachlade-
+**Wer bin ich?** In einer Ecke des Spielfelds steht „SPIELER 2 · ROT“ samt Zug-/Nachlade-
 Anzeige, über deiner Figur „DU · Name“, deine Achsen haben deine Farbe, und rechts steht deine
 Karte mit allen Spielern und ihren Leben. Wer am Zug ist, hat einen drehenden Ring. Bist du im
 Runden-Modus dran, steht „▶ Dein Zug!“ auch im Tab-Titel.
@@ -182,6 +206,7 @@ per `winget install Python.Python.3.12`.
 | Was | Wo |
 |---|---|
 | Level-Rezepte (Formen, Gegnerzahl, Wände) | `script.js`, Abschnitt 1 – `LEVELS` |
+| Level-Namen und Funktionsform unter dem Namen | `script.js`, Abschnitt 1 – `LEVELS` (`name`, `form`) |
 | Tutorial-Schritte (Texte, Gegner, Wände, Lösung) | `script.js`, Abschnitt 1 – `TUTORIAL` |
 | Kurvenformen für die Generierung | `script.js`, Abschnitt 1 – `SHAPES` |
 | Feldgröße, Karten-Matrix, Gegnergrößen | `script.js`, Abschnitt 2 – `VIEW`, `CELL`, `ENEMY_RADIUS` |
@@ -198,7 +223,8 @@ per `winget install Python.Python.3.12`.
 | Endlos-Modus (Umzug, Gegnerzahl, Abstand neuer Gegner) | `script.js`, Abschnitt 6 – `ENDLESS_…` |
 | Sandkasten (Spuren, Übungsziele) | `script.js`, Abschnitt 6 – `startSandbox`, `toggleTarget`, `SANDBOX_TRAILS` |
 | Farben der Spielwelt (Canvas) | `script.js`, Abschnitt 7 – `COLORS` |
-| Tipps unter der Eingabe | `script.js`, Abschnitt 8 – `functionTips` |
+| Fehler unter der Eingabe | `script.js`, Abschnitt 8 – `updatePreview`, `shotError` |
+| Sprung- und Polstellen, Wand-Treffer | `script.js`, Abschnitt 4 – `isJump`, `JUMP_LIMIT`, `wallHit` |
 | Reiter, Level-Auswahl | `script.js`, Abschnitt 8 – `buildLevelSelect`, `openLevelDialog` |
 | Profi-Modi y′ / y″ (Löser) | `script.js`, Abschnitt 4 – `odeStepper`, `buildArm`; Eingabe: `compileShot`, `setInputMode` |
 | Mathe-Tasten | `index.html` – `#keypad`; `script.js` – `insertAtCursor`, `keypadPress` |
@@ -210,5 +236,8 @@ per `winget install Python.Python.3.12`.
 | Multiplayer im Browser (Lobby-Fenster, Anzeige, Feuern) | `multiplayer.js` |
 | Multiplayer-Server (Lobbys, Wanddichte, Bereiche, Leben, Bedenkzeit) | `server.py` – Abschnitt 1 (`WALL_PIECES`, `HALVES`, `QUADRANTS`, `START_LIVES`, `ALLOWED_SETTINGS`, `OFFLINE_SKIP`) |
 | Faire Welt (Spiegelung von Wänden und Startplätzen) | `server.py` – `mirror_cells`, `make_walls`, `start_game` |
-| Farben, Schriften, Layout der Oberfläche | `style.css` – Variablen in `:root` |
+| Farben, Schriften, Muster (Stein, Holz, Pergament, Nieten), Layout der Oberfläche | `style.css` – Variablen in `:root` |
+| Holzrahmen ums Spielfeld | `style.css` – `.frame`, `#game`; `script.js` – `FRAME`, `fitCanvas` |
+| Pixel-Grafik des Spielfelds (Pergament, Farben, Zauberer, Schleime, Mauern, Icons) | `script.js`, Abschnitt 7 – `COLORS`, `drawGrid`, `WIZARD_SPRITE`, `slimeSprite`, `drawWalls`, `ICONS` |
+| Auflösung, Pixelgröße, Spielfeldgröße | `script.js` – `setPixelScale`, `fitCanvas` |
 | Info-Fenster, Beispiele, Aufbau der Seite | `index.html` |

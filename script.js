@@ -22,7 +22,7 @@
    Level werden nicht von Hand gezeichnet, sondern bei jedem
    Start zufällig erzeugt (siehe Abschnitt 5). Ein Level ist ein
    „Rezept“:
-     name, task, hint : Texte (Mathe in \( ... \) wird von MathJax gesetzt)
+     name, form       : Name und Funktionsform (LaTeX, steht unter dem Namen)
      shapes           : pro Eintrag eine Gegnergruppe, die auf einer
                         zufälligen Kurve dieser Form liegt (siehe SHAPES)
      count            : Gegner pro Gruppe
@@ -36,78 +36,18 @@
    ========================================================== */
 
 const LEVELS = [
-  {
-    name: 'Erste Gerade',
-    task: 'Du hast dein eigenes Koordinatensystem: Du bist der Ursprung (0 | 0), und deine Funktion wird von dir aus gezeichnet. Die Gerade \\(m\\cdot x\\) fliegt nach rechts – mit Minus direkt vor x, z. B. (-x)/2, nach links.',
-    hint: 'Fahre mit der Maus über einen Gegner: Liegt er z. B. 4,5 rechts und 1,5 oben von dir, ist m = 1,5 / 4,5 = 1/3. Alle Gegner liegen auf einer Geraden.',
-    shapes: ['linear'], count: 3, hp: [1], walls: 3, spareShots: 2,
-  },
-  {
-    name: 'Zwei Geraden',
-    task: 'Zwei Gegnergruppen auf zwei Geraden durch dich – vielleicht in verschiedenen Richtungen. Ein \\(+b\\) ändert nichts, nur Steigung und Richtung zählen. Wände (graue Blöcke) halten deinen Schuss auf – sind sie zerstörbar (⚙ Einstellungen), bekommen sie dabei ein Loch.',
-    hint: 'Steigung m = Δy / Δx, gemessen von dir bis zum Gegner. Liegt die Gruppe links von dir, schreibe Minus direkt vor x: (-x)/2 steigt nach links.',
-    shapes: ['linear', 'linear'], count: 3, hp: [1], walls: 6, spareShots: 1,
-  },
-  {
-    name: 'Dicke Brocken',
-    task: 'Größere Gegner halten mehr aus – die Kästchen über ihnen zeigen ihre Lebenspunkte. Pro Schuss gibt es höchstens 1 Schaden je Gegner.',
-    hint: 'Schieße mehrmals mit derselben Geraden durch die großen Gegner.',
-    shapes: ['linear', 'linear'], count: 3, hp: [1, 2], walls: 8, spareShots: 1,
-  },
-  {
-    name: 'Die Parabel',
-    task: 'Die Parabel \\(a\\cdot x^2\\) hat ihren Scheitel bei x = 0 – also genau bei dir, im Ursprung deines Koordinatensystems.',
-    hint: 'Lies die Lage eines Gegners an deinen Achsen ab, z. B. (4,5 | 2,5). Dann ist a ≈ 2,5 / 4,5² ≈ 1/8, also x^2/8.',
-    shapes: ['parabola'], count: 4, hp: [1, 2], walls: 8, spareShots: 1,
-  },
-  {
-    name: 'Wurfparabel',
-    task: 'Eine Gruppe liegt auf einer Parabel der Form \\(\\frac{x(k-x)}{d}\\), die andere auf einer Geraden.',
-    hint: 'Die Parabel hat ihre Nullstellen bei x = 0 (bei dir) und x = k und den Scheitel bei x = k/2 – alles in deinem Koordinatensystem.',
-    shapes: ['throw', 'linear'], count: 3, hp: [1], walls: 10, spareShots: 1,
-  },
-  {
-    name: 'Polynom-Schlange',
-    task: 'Die Gegner liegen auf einem Polynom dritten Grades \\(\\frac{x(x-a)(x+a)}{d}\\).',
-    hint: 'Hoch- und Tiefpunkte liegen symmetrisch zu dir (x = 0). Die Nullstellen sind x = −a, 0 und a.',
-    shapes: ['cubic'], count: 4, hp: [1], walls: 10, spareShots: 1,
-  },
-  {
-    name: 'Hyperbel mit Lücke',
-    task: '\\(\\frac{a}{x-b}\\) hat bei x = b eine Definitionslücke. Dort endet dein Schuss – er springt nicht darüber.',
-    hint: 'Liegt die Lücke zwischen dir und den Gegnern, schieß in die andere Richtung oder wähle ein anderes b.',
-    shapes: ['rational'], count: 4, hp: [1], walls: 10, spareShots: 1,
-  },
-  {
-    name: 'Wurzelkraft',
-    task: '\\(\\sqrt{x}\\) gibt es nur für x ≥ 0, \\(\\sqrt{-x}\\) nur für x ≤ 0 (Schuss nach links), \\(\\sqrt{|x|}\\) überall.',
-    hint: 'Ein Faktor davor streckt die Wurzel: \\(2\\sqrt{x}\\) ist doppelt so steil, \\(-\\sqrt{x}\\) zeigt nach unten.',
-    shapes: ['sqrt', 'sqrt'], count: 3, hp: [1, 2], walls: 10, spareShots: 1,
-  },
-  {
-    name: 'Exponentiell',
-    task: '\\(e^{\\frac{x}{k}}\\) wächst immer schneller – erst flach, dann immer steiler. \\(e^{\\frac{-x}{k}}\\) ist das Spiegelbild und fliegt nach links.',
-    hint: 'Je größer k, desto flacher. Die zweite Gruppe liegt auf einer Geraden.',
-    shapes: ['exp', 'linear'], count: 3, hp: [1], walls: 12, spareShots: 1,
-  },
-  {
-    name: 'Sinuswelle',
-    task: 'Die Sinuswelle startet bei dir und schwingt auf und ab. Verlässt sie das Feld oben oder unten, endet der Schuss.',
-    hint: 'Die Amplitude ist die Höhe der Wellenberge. \\(\\sin(\\frac{x}{2})\\) hat eine doppelt so lange Periode wie \\(\\sin(x)\\).',
-    shapes: ['sin'], count: 5, hp: [1], walls: 12, spareShots: 1,
-  },
-  {
-    name: 'Kosinus & Tangens',
-    task: 'Eine Gruppe liegt auf einer Kosinuswelle, die andere auf einem Tangens. Am Sprung des Tangens endet der Schuss.',
-    hint: 'Die Wellenberge von \\(a\\cos(\\frac{x}{k})\\) liegen bei x = 0 (bei dir), ±2kπ … \\(\\tan(\\frac{x}{k})\\) springt bei \\(x = \\pm\\frac{k\\pi}{2}\\).',
-    shapes: ['cos', 'tan'], count: 3, hp: [1], walls: 12, spareShots: 1,
-  },
-  {
-    name: 'Finale',
-    task: 'Kombinierte Funktionen wie \\(\\frac{x}{4}+\\sin(x)\\) – und Bosse mit 3 Lebenspunkten.',
-    hint: 'Eine Gruppe liegt auf einer Summe (Gerade, Parabel oder Wurzel plus Sinus/Kosinus), die andere auf einer Parabel.',
-    shapes: ['combo', 'parabola'], count: 4, hp: [1, 2, 3], walls: 14, spareShots: 1,
-  },
+  { name: 'Erste Gerade', form: 'm\\cdot x', shapes: ['linear'], count: 3, hp: [1], walls: 3, spareShots: 2 },
+  { name: 'Zwei Geraden', form: 'm\\cdot x', shapes: ['linear', 'linear'], count: 3, hp: [1], walls: 6, spareShots: 1 },
+  { name: 'Dicke Brocken', form: 'm\\cdot x', shapes: ['linear', 'linear'], count: 3, hp: [1, 2], walls: 8, spareShots: 1 },
+  { name: 'Die Parabel', form: 'a\\cdot x^2', shapes: ['parabola'], count: 4, hp: [1, 2], walls: 8, spareShots: 1 },
+  { name: 'Wurfparabel', form: '\\frac{x(k-x)}{d} \\quad m\\cdot x', shapes: ['throw', 'linear'], count: 3, hp: [1], walls: 10, spareShots: 1 },
+  { name: 'Polynom-Schlange', form: '\\frac{x(x-a)(x+a)}{d}', shapes: ['cubic'], count: 4, hp: [1], walls: 10, spareShots: 1 },
+  { name: 'Hyperbel', form: '\\frac{a}{x \\pm b}', shapes: ['rational'], count: 4, hp: [1], walls: 10, spareShots: 1 },
+  { name: 'Wurzelkraft', form: 'a\\sqrt{x} \\quad a\\sqrt{|x|}', shapes: ['sqrt', 'sqrt'], count: 3, hp: [1, 2], walls: 10, spareShots: 1 },
+  { name: 'Exponentiell', form: '\\pm e^{\\pm x/k} \\quad m\\cdot x', shapes: ['exp', 'linear'], count: 3, hp: [1], walls: 12, spareShots: 1 },
+  { name: 'Sinuswelle', form: 'a\\sin(x/k)', shapes: ['sin'], count: 5, hp: [1], walls: 12, spareShots: 1 },
+  { name: 'Kosinus & Tangens', form: 'a\\cos(x/k) \\quad a\\tan(x/k)', shapes: ['cos', 'tan'], count: 3, hp: [1], walls: 12, spareShots: 1 },
+  { name: 'Finale', form: 'g(x) + \\sin x \\quad a\\cdot x^2', shapes: ['combo', 'parabola'], count: 4, hp: [1, 2, 3], walls: 14, spareShots: 1 },
 ];
 
 // Zufallshilfen
@@ -115,11 +55,8 @@ const pick = list => list[Math.floor(Math.random() * list.length)];
 const randomInt = (min, max) => min + Math.floor(Math.random() * (max - min + 1));
 
 // Kurvenformen für die Kartengenerierung. Jede liefert eine zufällige
-// Funktion als Text – genau das, was ein Spieler eintippen würde. Sie sind für
-// Schüsse nach rechts geschrieben; maybeMirror (Abschnitt 5) macht daraus bei
-// Bedarf einen Schuss nach links, indem jedes x zu (-x) wird. Deshalb darf
-// der Buchstabe x hier nur als Variable vorkommen (z. B. nicht exp(...)), und
-// kein x darf selbst schon ein Minus direkt davor haben (sonst wäre es -(-x)).
+// Funktion als Text – genau das, was ein Spieler eintippen würde (x zählt vom
+// Spieler aus, geschossen wird nach rechts).
 const SHAPES = {
   linear: () => { const m = pick(['x/5', 'x/4', 'x/3', 'x/2', '2x/3', 'x', '3x/2', '2x']); return pick([m, `-(${m})`]); },
   parabola: () => pick(['', '-']) + `x^2/${pick([2, 3, 4, 5, 6, 8, 10])}`,
@@ -140,56 +77,24 @@ const SHAPES = {
 
 // Tutorial: feste kleine Karten. Gegner [dx, dy, Lebenspunkte] und Wände
 // [dx, dy] stehen relativ zum Spieler (Kästchenmitte = ganze Zahl + 0,5).
-// player: andere Startposition für einen Schritt.
-const TUTORIAL_PLAYER = { x: -5, y: -2 };
+// player: andere Startposition für einen Schritt (immer links, x ≤ 0).
+const TUTORIAL_PLAYER = { x: -10, y: -2 };
 const TUTORIAL = [
-  {
-    title: 'Willkommen, Function Fighter!',
-    text: 'Das bist du – der blaue Kämpfer mit „DU“. Die blauen Achsen sind DEIN Koordinatensystem: Du bist immer der Ursprung (0 | 0), alle Zahlen zählen von dir aus. Deine Funktion wird genau so gezeichnet wie im Sandkasten – von dir aus, und so verschoben, dass sie durch dich geht. Der Schuss fliegt von dir aus in EINE Richtung.',
-  },
-  {
-    title: 'Deine erste Gerade',
-    text: 'Fahre mit der Maus über die Gegner: Der erste liegt 4,5 rechts und 1,5 oben von dir – Steigung \\(\\frac{1{,}5}{4{,}5}=\\frac{1}{3}\\). Tippe unten x/3 ein und drücke Enter oder FEUER. Der Schuss fliegt nach rechts.',
-    enemies: [[4.5, 1.5, 1], [10.5, 3.5, 1]],
-    solution: ['x/3'],
-  },
-  {
-    title: 'Nach links schießen',
-    text: 'Die Richtung bestimmst du mit dem Vorzeichen von x: Steht direkt vor x ein Minus, fliegt der Schuss nach links. (-x)/3 ist das Spiegelbild von x/3 – nach links steigt es an. Probier (-x)/3.',
-    enemies: [[-4.5, 1.5, 1], [-10.5, 3.5, 1]],
-    solution: ['(-x)/3'],
-  },
-  {
-    title: 'Die Parabel',
-    text: 'Die Parabel x^2/8 hat ihren Scheitel bei x = 0 – also genau bei dir. Lies an deinen Achsen ab: Der erste Gegner liegt bei (4,5 | 2,5), und 4,5² / 8 ≈ 2,5. Ein +b am Ende ändert nichts, es fällt beim Verschieben weg. Probier x^2/8.',
-    enemies: [[4.5, 2.5, 1], [6.5, 5.5, 1]],
-    solution: ['x^2/8'],
-  },
-  {
-    title: 'Dicke Brocken',
-    text: 'Die Kästchen über einem Gegner sind seine Lebenspunkte. Jeder Schuss macht höchstens 1 Schaden pro Gegner – der große braucht also 2 Treffer. Schieße zweimal mit -x (Minus direkt vor x → nach links, steigend).',
-    enemies: [[-3.5, 3.5, 2], [-6.5, 6.5, 1]],
-    solution: ['-x', '-x'],
-  },
-  {
-    title: 'Wände',
-    text: 'Graue Blöcke sind Wände: Jeder Schuss endet dort und sprengt wie bei Graphwar ein Loch hinein (in den ⚙ Einstellungen kannst du Wände unzerstörbar machen). Er endet auch, wenn er das Feld verlässt oder die Funktion springt. Die direkte Gerade zum Gegner ist versperrt. Die flache Parabel x^2/33 startet bei dir fast waagerecht, läuft unter der Wand durch und steigt dann zum Gegner.',
-    enemies: [[13.5, 5.5, 1]],
-    walls: [[2.5, 1.5], [2.5, 2.5]],
-    solution: ['x^2/33'],
-  },
-  {
-    title: 'Bereit!',
-    text: 'Merke: Du bist der Ursprung deines Koordinatensystems, die Funktion startet bei dir, Minus direkt vor x = Schuss nach links. Alle Schreibweisen findest du rechts unter „Wie gebe ich Funktionen ein?“. Im □ Sandkasten kannst du alles in Ruhe ausprobieren. Viel Spaß!',
-  },
+  { title: 'Willkommen!', text: 'Du bist der Nullpunkt (0 | 0). Deine Kurve: \\(y = f(x) - f(0)\\)' },
+  { title: 'Erste Gerade', text: 'Tippe x/3 und drücke Enter.', enemies: [[4.5, 1.5, 1], [10.5, 3.5, 1]], solution: ['x/3'] },
+  { title: 'Nur die Steigung zählt', text: '+b fällt weg: -x/3+5 trifft wie -x/3.', enemies: [[4.5, -1.5, 1], [10.5, -3.5, 1]], solution: ['-x/3+5'] },
+  { title: 'Die Parabel', text: 'Probier x^2/8.', enemies: [[4.5, 2.5, 1], [6.5, 5.5, 1]], solution: ['x^2/8'] },
+  { title: 'Dicke Brocken', text: 'Ein Herz = ein Treffer. Zweimal x.', enemies: [[3.5, 3.5, 2], [6.5, 6.5, 1]], solution: ['x', 'x'] },
+  { title: 'Mauern', text: 'Mauern stoppen den Schuss. Probier x^2/33.', enemies: [[13.5, 5.5, 1]], walls: [[2.5, 1.5], [2.5, 2.5]], solution: ['x^2/33'] },
+  { title: 'Bereit!', text: 'L davor schießt nach links: L x^2/8' },
 ];
 
 /* ==========================================================
    2. SPIELFELD, KOORDINATEN & KARTEN-MATRIX
    ----------------------------------------------------------
-   Sichtbarer Ausschnitt in Mathe-Koordinaten (wie bei Graphwar):
-   x von -25 bis 25, y von -15 bis 15 – der Ursprung liegt genau in
-   der Mitte.
+   Intern (Welt-Koordinaten, nur zum Speichern und Verschicken – der
+   Spieler sieht sie nie): x von -25 bis 25, y von -15 bis 15, der
+   Welt-Nullpunkt liegt in der Mitte.
    Beide Achsen haben denselben Maßstab (UNIT), damit Kreise
    auch wirklich rund sind.
 
@@ -203,6 +108,14 @@ const TUTORIAL = [
    auf einem KREUZ des Rasters (ganzzahlige Koordinaten) und ist
    deshalb in der Matrix als 2×2-Block aus vier 5en gespeichert –
    den vier Kästchen, die an sein Kreuz grenzen.
+
+   Eigenes Koordinatensystem: Der Nullpunkt (0 | 0) jedes Spielers
+   liegt in ihm selbst, und jeder sieht das Feld so, dass ER LINKS
+   steht. Steht er in der Welt rechts (x > 0), wird für ihn alles an
+   der y-Achse gespiegelt: Seine x-Richtung zeigt in der Welt nach
+   links (y bleibt gleich). Gespeichert und verschickt wird immer in
+   Welt-Koordinaten; gespiegelt wird nur beim Rechnen des eigenen
+   Schusses (ownX) und beim Zeichnen (toCanvasX / toMathX).
    ========================================================== */
 
 const VIEW = { xMin: -25, xMax: 25, yMin: -15, yMax: 15 };
@@ -215,12 +128,28 @@ const ROWS = VIEW.yMax - VIEW.yMin;              // 30 Zeilen
 const CELL = { EMPTY: 0, WALL: 4, PLAYER: 5 };   // 1–3 = Gegner mit so vielen Lebenspunkten
 const ENEMY_RADIUS = { 1: 0.45, 2: 0.6, 3: 0.8 };
 
+// Spiegelung des Koordinatensystems eines Spielers: +1 = wie die Welt, −1 = gespiegelt
+// (er steht rechts der Mitte und sieht sich deshalb links).
+function mirrorOf(player) { return player && player.x > 0 ? -1 : 1; }
+
+// x eines Welt-Punktes im Koordinatensystem dieses Spielers (für Welt-x aus eigenem x
+// gilt dieselbe Formel, weil Spiegeln zweimal nichts ändert)
+function ownX(x, player) { return mirrorOf(player) * x; }
+
+// Spiegelung der Ansicht: die des eigenen Spielers – im Editor nie (dort wird gebaut)
+function viewMirror() { return state.mode === 'editor' ? 1 : mirrorOf(state.player); }
+
+// Welt-Punkt -> Koordinaten im eigenen System des Spielers (Nullpunkt im Spieler,
+// gespiegelt wie die Ansicht) – für Achsen, Mausanzeige und Beschriftungen
+function viewX(x) { return viewMirror() * (x - state.player.x); }
+function viewY(y) { return y - state.player.y; }
+
 // Mathe -> Pixel. Die y-Achse wird umgedreht, weil Canvas-y nach unten zählt.
-function toCanvasX(x) { return (x - VIEW.xMin) * UNIT; }
+function toCanvasX(x) { return (viewMirror() * x - VIEW.xMin) * UNIT; }
 function toCanvasY(y) { return (VIEW.yMax - y) * UNIT; }
 
 // Pixel -> Mathe (für die Mausposition)
-function toMathX(px) { return px / UNIT + VIEW.xMin; }
+function toMathX(px) { return viewMirror() * (px / UNIT + VIEW.xMin); }
 function toMathY(py) { return VIEW.yMax - py / UNIT; }
 
 // Kästchen (Spalte c, Zeile r) -> Mittelpunkt in Mathe-Koordinaten
@@ -341,19 +270,19 @@ function readMap(grid) {
 // Alle Funktionen, die in den Einstellungen einzeln abgeschaltet werden können.
 // Lineare Funktionen (m·x + b) sind immer erlaubt.
 const FUNCTION_TYPES = {
-  power:    { group: 'Grundlagen', label: 'Potenzen & Polynome (x², x(x+1))' },
-  rational: { group: 'Grundlagen', label: 'Bruchfunktionen (x im Nenner)' },
-  abs:      { group: 'Grundlagen', label: 'Betrag |x|' },
-  sqrt:     { group: 'Wurzeln', label: 'Quadratwurzel √x' },
-  root:     { group: 'Wurzeln', label: 'n-te Wurzel ⁿ√x' },
-  exp:      { group: 'Exponentialfunktion', label: 'Exponentialfunktion (eˣ, 2ˣ, exp)' },
-  sin:      { group: 'Trigonometrie', label: 'sin – Sinus' },
-  cos:      { group: 'Trigonometrie', label: 'cos – Kosinus' },
-  tan:      { group: 'Trigonometrie', label: 'tan – Tangens' },
-  cot:      { group: 'Trigonometrie', label: 'cot – Kotangens' },
-  sinh:     { group: 'Hyperbelfunktionen', label: 'sinh' },
-  cosh:     { group: 'Hyperbelfunktionen', label: 'cosh' },
-  tanh:     { group: 'Hyperbelfunktionen', label: 'tanh' },
+  power:    { group: 'Grundlagen', label: 'x^2  x(x+1)' },
+  rational: { group: 'Grundlagen', label: '1/x' },
+  abs:      { group: 'Grundlagen', label: '|x|' },
+  sqrt:     { group: 'Wurzeln', label: 'sqrt(x)' },
+  root:     { group: 'Wurzeln', label: 'sqrt[n](x)' },
+  exp:      { group: 'Exponential', label: 'e^x  2^x' },
+  sin:      { group: 'Trigonometrie', label: 'sin' },
+  cos:      { group: 'Trigonometrie', label: 'cos' },
+  tan:      { group: 'Trigonometrie', label: 'tan' },
+  cot:      { group: 'Trigonometrie', label: 'cot' },
+  sinh:     { group: 'Hyperbolisch', label: 'sinh' },
+  cosh:     { group: 'Hyperbolisch', label: 'cosh' },
+  tanh:     { group: 'Hyperbolisch', label: 'tanh' },
 };
 
 // Unterstützte Funktionen: Name -> JavaScript-Funktion, Funktionstyp, LaTeX-Befehl
@@ -389,20 +318,31 @@ function stripPrefix(text) {
   return text.replace(/^\s*(f\s*\(\s*x\s*\)|y['’′´`″]{0,2})\s*=/, '');
 }
 
+// Schussrichtung vor der Funktion: „L“ oder „l“ schießt nach links, „R“, „r“ oder nichts nach
+// rechts. Erlaubt mit oder ohne Leerzeichen/Doppelpunkt und auch hinter „f(x) =“, z. B.
+// „L x^2“, „lx/2“, „R: sin(x)“, „f(x) = L x^2“. ln, log und lg bleiben Wörter (die gibt es im
+// Spiel nicht – dafür kommt dann die passende Fehlermeldung).
+// Ergebnis: { dir: 1 (rechts) oder −1 (links), text: Eingabe ohne den Buchstaben }
+function splitDirection(input) {
+  const m = /^(\s*(?:(?:f\s*\(\s*x\s*\)|y['’′´`″]{0,2})\s*=)?\s*)([LlRr])(?![nN]|[oO][gG]|[gG])\s*:?\s*/.exec(String(input));
+  if (!m) return { dir: 1, text: String(input) };
+  return { dir: m[2] === 'L' || m[2] === 'l' ? -1 : 1, text: m[1] + String(input).slice(m[0].length) };
+}
+
 // Variablen der Profi-Modi: y (Höhe) und y' (Steigung). Sie werden beim Lösen der
 // Differentialgleichung gesetzt, bevor die Funktion ausgerechnet wird (siehe odeStepper).
 const odeVars = { y: 0, p: 0 };
 
 // Wandelt einen Befehlsnamen in ein Token um
 function commandToken(name) {
-  if (REMOVED_WORDS.includes(name)) fail(`„${name}“ gibt es in diesem Spiel nicht (keine Logarithmen, kein arcsin, arccos oder arctan).`);
+  if (REMOVED_WORDS.includes(name)) fail(`${name} gibt es hier nicht`);
   if (name in FUNCTIONS) return { type: 'func', name };
   if (name === 'sqrt') return { type: 'sqrt' };
   if (name === 'frac' || name === 'dfrac' || name === 'tfrac') return { type: 'frac' };
   if (name === 'pi') return { type: 'const', value: Math.PI, tex: '\\pi' };
   if (name === 'cdot' || name === 'times') return { type: 'sym', value: '*' };
   if (name === 'div') return { type: 'sym', value: '/' };
-  return fail(`Der Befehl „${name}“ wird nicht unterstützt.`);
+  return fail(`Unbekannt: ${name}`);
 }
 
 // Zerlegt den Text in Tokens (Zahlen, x, Befehle, Zeichen).
@@ -436,7 +376,7 @@ function tokenize(source, vars = []) {
     // Befehle mit Backslash: \frac, \sin, \pi, ...
     if (ch === '\\') {
       const cmd = /^\\([a-zA-Z]+)/.exec(rest);
-      if (!cmd) fail('Nach „\\“ wird ein Befehl erwartet, z. B. frac oder sqrt.');
+      if (!cmd) fail('Nach \\ fehlt ein Befehl');
       tokens.push(commandToken(cmd[1]));
       i += cmd[0].length;
       continue;
@@ -455,8 +395,7 @@ function tokenize(source, vars = []) {
         const prime = s[i + 1] === "'";
         const name = prime ? 'p' : 'y';
         if (!vars.includes(name)) {
-          fail(prime ? 'y′ gibt es nur im Modus y″ = … (links neben dem Eingabefeld umstellen).'
-            : 'y gibt es nur in den Profi-Modi y′ = … und y″ = … (links neben dem Eingabefeld umstellen).');
+          fail(prime ? 'y′ nur im Modus y″' : 'y nur in den Modi y′ und y″');
         }
         tokens.push({ type: 'var', name });
         i += prime ? 2 : 1;
@@ -464,7 +403,7 @@ function tokenize(source, vars = []) {
         tokens.push({ type: 'const', value: Math.E, tex: 'e' });
         i++;
       } else {
-        fail(`Unbekannte Variable „${ch}“. Verwende nur x als Variable.`);
+        fail(`Unbekannt: ${ch} – nur x`);
       }
       continue;
     }
@@ -475,7 +414,7 @@ function tokenize(source, vars = []) {
       continue;
     }
 
-    fail(`Das Zeichen „${ch}“ wird nicht unterstützt.`);
+    fail(`Zeichen ${ch} geht nicht`);
   }
   return tokens;
 }
@@ -494,13 +433,14 @@ function describe(token) {
 
 // sin und cos dürfen höchstens so schnell schwingen wie sin(4x): Die Zahl vor x
 // ist höchstens MAX_TRIG_FACTOR. Geprüft wird allgemein, wie stark sich das
-// Argument auf 1 Einheit ändert – überall, wo der Schuss hinkommen kann (x von
-// −50 bis 50, vom Spieler aus). So zählen auch sin(x*4), sin(8x/2) oder sin(x^2).
+// Argument auf 1 Einheit ändert – überall, wo der Schuss hinkommen kann (das Feld
+// geht von x = −25 bis 25, geprüft wird großzügig von −50 bis 50). So zählen auch
+// sin(x*4), sin(8x/2) oder sin(x^2).
 const MAX_TRIG_FACTOR = 4;
 function checkTrigSpeed(name, arg) {
   for (let u = -50; u <= 49; u += 0.05) {
     if (Math.abs(arg(u + 1) - arg(u)) > MAX_TRIG_FACTOR + 1e-9) {
-      fail(`${name} schwingt zu schnell: Die Zahl vor x darf höchstens ${MAX_TRIG_FACTOR} sein, z. B. ${name}(4x) oder ${name}(x/2).`);
+      fail(`Zu schnell – höchstens ${name}(${MAX_TRIG_FACTOR}x)`);
     }
   }
 }
@@ -517,8 +457,6 @@ function nthRoot(a, n) {
 function parseTokens(tokens, xTex = 'x') {
   let pos = 0;
   const types = new Set();
-  let xCount = 0;          // wie oft x vorkommt …
-  let mirroredX = 0;       // … und wie oft davon direkt mit Minus: -x (Schuss nach links)
   const peek = () => tokens[pos];
   const isSym = (t, v) => t !== undefined && t.type === 'sym' && t.value === v;
   const OPEN = { '(': ')', '{': '}', '[': ']' };
@@ -544,22 +482,24 @@ function parseTokens(tokens, xTex = 'x') {
     return node(x => a.f(x) / b.f(x), [a, b], `\\frac{${bare(a)}}{${bare(b)}}`, 'frac');
   }
 
-  // Kann mit diesem Token ein neuer Faktor beginnen? (für implizites Mal: 2x, 3sin(x), (x+1)(x-1))
+  // Kann mit diesem Token ein neuer Faktor beginnen? (für implizites Mal: 2x, 3sin(x), (x+1)(x-1), 2|x|)
+  // Ein „|“ öffnet nur außerhalb eines Betrags einen neuen Faktor – drinnen schließt es ihn.
+  let absDepth = 0;
   function startsFactor(t) {
     if (!t) return false;
     if (['num', 'x', 'var', 'const', 'func', 'frac', 'sqrt'].includes(t.type)) return true;
+    if (isSym(t, '|')) return absDepth === 0;
     return isOpen(t);
   }
 
   function endedTooEarly() {
     const prev = tokens[pos - 1];
-    fail('Die Eingabe ist unvollständig' + (prev ? ` – nach „${describe(prev)}“ fehlt noch etwas.` : '.'));
+    fail(prev ? `Nach ${describe(prev)} fehlt etwas` : 'Unvollständig');
   }
 
   function expect(value) {
     if (isSym(peek(), value)) { pos++; return; }
-    const names = { ')': 'schließende Klammer „)“', '}': 'schließende Klammer „}“', ']': 'schließende Klammer „]“', '|': 'schließender Betragsstrich „|“' };
-    fail(`Es fehlt eine ${names[value]}.`);
+    fail(`${value} fehlt`);
   }
 
   // Klammer-Gruppe ( ... ), { ... } oder [ ... ] – wird immer mit runden Klammern angezeigt
@@ -601,7 +541,6 @@ function parseTokens(tokens, xTex = 'x') {
     if (isSym(peek(), '-')) {
       pos++;
       const a = unary();
-      if (a === variable) mirroredX++;
       return node(x => -a.f(x), [a], `-${a.kind === 'neg' ? paren(a.tex) : a.tex}`, 'neg');
     }
     if (isSym(peek(), '+')) { pos++; return unary(); }
@@ -612,28 +551,34 @@ function parseTokens(tokens, xTex = 'x') {
     const base = primary();
     if (!isSym(peek(), '^')) return base;
     pos++;
-    const exp = exponent();
-    if (isSym(peek(), '^')) fail('Doppelter Exponent – setze Klammern, z. B. (x^2)^3.');
+    return raise(base, exponent());
+  }
+
+  function raise(base, exp) {
     if (exp.hasX) types.add('exp');            // x im Exponenten: e^x, 2^x
     else if (base.hasX) types.add('power');    // x in der Basis:  x^2
-    const baseTex = base.kind === 'frac' || base.kind === 'neg' ? paren(base.tex) : base.tex;
+    const baseTex = base.kind === 'frac' || base.kind === 'neg' || base.kind === 'power' ? paren(base.tex) : base.tex;
     return node(x => Math.pow(base.f(x), exp.f(x)), [base, exp], `${baseTex}^{${bare(exp)}}`, 'power');
   }
 
-  // Exponent: optionales Vorzeichen + EIN Baustein (Zahl, x, Funktion oder Klammer).
-  // x^12 = x hoch 12,  e^-x = e hoch -x,  x^(2x+1) für längere Exponenten.
-  // e^2x heißt (wie beim Taschenrechner) e² · x – die Vorschau zeigt es an.
+  // Exponent: optionales Vorzeichen + EIN Baustein (Zahl, x, Funktion oder Klammer),
+  // Potenztürme von rechts wie in der Mathematik: x^2^3 = x^(2^3), e^-x^2 = e^(−x²).
+  // x^(2x+1) für längere Exponenten. e^2x heißt (wie beim Taschenrechner) e² · x.
   function exponent() {
     const t = peek();
     if (!t) endedTooEarly();
     if (isSym(t, '-') || isSym(t, '+')) {
       pos++;
       const a = exponent();
-      if (t.value === '-' && a === variable) mirroredX++;
       return t.value === '-' ? node(x => -a.f(x), [a], `-${bare(a)}`, 'neg') : a;
     }
-    if (startsFactor(t) || isSym(t, '|')) return primary();
-    fail('Nach „^“ fehlt der Exponent, z. B. x^2 oder x^(2x+1).');
+    if (startsFactor(t) || isSym(t, '|')) {
+      const base = primary();
+      if (!isSym(peek(), '^')) return base;
+      pos++;
+      return raise(base, exponent());
+    }
+    fail('Exponent fehlt: x^2');
   }
 
   // Argument von frac/sqrt im LaTeX-Stil: (Gruppe), {Gruppe} oder ein einzelnes Zeichen
@@ -643,8 +588,7 @@ function parseTokens(tokens, xTex = 'x') {
     if (isOpen(t)) return group();
     if (t.type === 'num' && t.text.length === 1) { pos++; return constant(t.value, t.text); }
     if (['x', 'var', 'const', 'frac', 'sqrt'].includes(t.type)) return primary();
-    const example = command === 'frac' ? 'frac(Zähler;Nenner)' : 'sqrt(x)';
-    fail(`Nach ${command} bitte Klammern verwenden: ${example}.`);
+    fail(`Klammern: ${command === 'frac' ? 'frac(a;b)' : 'sqrt(x)'}`);
   }
 
   function primary() {
@@ -653,13 +597,15 @@ function parseTokens(tokens, xTex = 'x') {
 
     if (t.type === 'num') { pos++; return constant(t.value, t.text.replace(',', '{,}')); }
     if (t.type === 'const') { pos++; return constant(t.value, t.tex); }
-    if (t.type === 'x') { pos++; xCount++; return variable; }
+    if (t.type === 'x') { pos++; return variable; }
     if (t.type === 'var') { pos++; return t.name === 'y' ? odeY : odeP; }
     if (isOpen(t)) return group();
 
     if (isSym(t, '|')) {
       pos++;
+      absDepth++;
       const a = expression();
+      absDepth--;
       expect('|');
       if (a.hasX) types.add('abs');
       return node(x => Math.abs(a.f(x)), [a], `\\left|${a.tex}\\right|`);
@@ -703,8 +649,10 @@ function parseTokens(tokens, xTex = 'x') {
       pos++;
       const info = FUNCTIONS[t.name];
       let exp = null;
-      if (isSym(peek(), '_')) fail(`„${t.name}“ hat keinen Index „_“.`);
+      if (isSym(peek(), '_')) fail(`${t.name} hat keinen Index „_“`);
       if (isSym(peek(), '^')) { pos++; exp = exponent(); }   // sin^2(x)
+      // sin^-1(x) heißt in der Mathematik arcsin(x), nicht 1/sin(x) – Umkehrfunktionen gibt es nicht
+      if (exp && !exp.hasX && exp.f(0) === -1 && t.name !== 'abs') fail(`${t.name}^-1 gibt es nicht – für 1/${t.name}(x) so schreiben`);
 
       // Argument: in Klammern, z. B. sin(x) – oder ohne Klammern, z. B. sin x oder sin 2x
       let arg;
@@ -715,7 +663,7 @@ function parseTokens(tokens, xTex = 'x') {
         arg = power();
         while (startsFactor(peek()) && peek().type !== 'func') arg = multiply(arg, power(), false);
       } else {
-        fail(`Nach „${t.name}“ fehlt das Argument, z. B. ${t.name}(x).`);
+        fail(`Argument fehlt: ${t.name}(x)`);
       }
       if (arg.hasX) types.add(info.type);
       if (arg.hasX && (info.type === 'sin' || info.type === 'cos')) checkTrigSpeed(t.name, arg.f);
@@ -730,63 +678,60 @@ function parseTokens(tokens, xTex = 'x') {
       return node(apply, parts, tex);
     }
 
-    if (isSym(t, ';')) fail('„;“ trennt nur Zähler und Nenner: frac(Zähler;Nenner).');
-    fail(`„${describe(t)}“ steht an einer unerwarteten Stelle.`);
+    if (isSym(t, ';')) fail('; nur in frac(a;b)');
+    fail(`${describe(t)} passt hier nicht`);
   }
 
   const root = expression();
   if (pos < tokens.length) {
     const t = peek();
-    if (isSym(t, ')') || isSym(t, '}') || isSym(t, ']')) fail(`Zu viele schließende Klammern „${t.value}“.`);
-    if (isSym(t, ';')) fail('„;“ trennt nur Zähler und Nenner: frac(Zähler;Nenner).');
-    fail(`„${describe(t)}“ steht an einer unerwarteten Stelle.`);
+    if (isSym(t, ')') || isSym(t, '}') || isSym(t, ']')) fail(`Zu viele ${t.value}`);
+    if (isSym(t, ';')) fail('; nur in frac(a;b)');
+    fail(`${describe(t)} passt hier nicht`);
   }
-  // Richtung: Steht vor JEDEM x direkt ein Minus (-x, (-x)/6, sin(-x)), geht der Schuss nach links
-  const dir = xCount > 0 && mirroredX === xCount ? -1 : 1;
-  return { fn: root.f, types: [...types], tex: root.tex, dir };
+  return { fn: root.f, types: [...types], tex: root.tex };
 }
 
-// Haupteinstieg: Eingabe -> { ok: true, fn, types, tex, dir } oder { ok: false, error }
-//   fn  = die Funktion genau wie eingegeben (x zählt vom Spieler aus, siehe Abschnitt 4)
-//   dir = Schussrichtung: +1 nach rechts, −1 nach links (Minus direkt vor jedem x)
+// Haupteinstieg: Eingabe -> { ok: true, fn, types, tex } oder { ok: false, error }
+//   fn  = die Funktion genau wie eingegeben (x im Koordinatensystem des Spielers, siehe Abschnitt 4)
 //   mode = 'y' (Funktion), 'y1' (y′ = f(x, y)) oder 'y2' (y″ = f(x, y, y′))
 function compileLatex(input, xTex = 'x', mode = 'y') {
   try {
     const text = stripPrefix(String(input)).trim();
-    if (text === '') return { ok: false, error: 'Bitte gib eine Funktion ein, z. B. x/2.' };
+    if (text === '') return { ok: false, error: 'Funktion eingeben' };
     const vars = mode === 'y1' ? ['y'] : mode === 'y2' ? ['y', 'p'] : [];
-    const { fn, types, tex, dir } = parseTokens(tokenize(text, vars), xTex);
+    const { fn, types, tex } = parseTokens(tokenize(text, vars), xTex);
     fn(1);   // einmal ausprobieren
-    return { ok: true, fn, types, tex, dir };
+    return { ok: true, fn, types, tex };
   } catch (err) {
     if (err.isInputError) return { ok: false, error: err.message };
-    return { ok: false, error: 'Die Eingabe konnte nicht verarbeitet werden.' };
+    return { ok: false, error: 'Eingabe ungültig' };
   }
 }
 
 /* ==========================================================
    4. KURVE, WÄNDE & TREFFERERKENNUNG
    ----------------------------------------------------------
-   Jeder Spieler hat sein EIGENES Koordinatensystem: Er steht auf dem
-   Kreuz P = (px | py) des Spielfelds und ist der Ursprung (0 | 0)
-   seines Systems. Seine Funktion f wird wie im Sandkasten mit dem
-   x relativ zum Spieler ausgerechnet und so verschoben, dass sie
-   durch ihn geht (in Spielfeld-Koordinaten):
+   Jeder Spieler hat sein EIGENES Koordinatensystem: Der Nullpunkt
+   (0 | 0) liegt in ihm selbst, und er sieht sich links (gespiegelt,
+   falls er in der Welt rechts steht – siehe Abschnitt 2). Er schießt
+   nach rechts, also für x ≥ 0 – oder mit „L“ vor der Funktion nach
+   links, für x ≤ 0 (splitDirection). Gezeichnet wird der Graph von f
+   in diesem System, nur in y-Richtung verschoben, so dass er aus dem
+   Spieler herauskommt:
 
-       y(x) = py + f(x − px) − f(0)
+       y(x) = f(x) − f(0)        für x von 0 bis zum rechten Rand
 
    x^2 hat seinen Scheitel also immer beim Spieler, egal wo er steht.
    Ein +b am Ende ändert nichts, weil es beim Verschieben wieder
    wegfällt. Ist f(0) nicht definiert (z. B. 1/x), kann nicht
-   geschossen werden.
+   geschossen werden. In den Profi-Modi wird die Differentialgleichung
+   exakt im Spieler gestartet: y(0) = 0 (bei y″ zusätzlich
+   y′(0) = Startsteigung).
 
    Wie bei Graphwar fliegt die Kurve durch Gegner hindurch und
-   sprengt Löcher in Wände. Anders als bei Graphwar:
-     – eigenes Koordinatensystem pro Spieler (siehe oben),
-     – Richtung: Der Schuss läuft nach rechts – oder nach links, wenn
-       vor jedem x direkt ein Minus steht (-x, (-x)/6, sin(-x); siehe
-       parseTokens).
-   Eine Reichweiten-Grenze gibt es nicht. Der Schuss endet erst,
+   sprengt Löcher in Wände. Eine Reichweiten-Grenze gibt es nicht.
+   Der Schuss endet erst,
      – an einer Wand (sind Wände zerstörbar, sprengt er ein Loch hinein, siehe
        blastWall und wallsBreakable),
      – wenn er das Spielfeld oben, unten oder seitlich verlässt,
@@ -799,10 +744,9 @@ function compileLatex(input, xTex = 'x', mode = 'y') {
    ========================================================== */
 
 const STEP = 0.005;        // Abstand der Stützstellen in x-Richtung
-const WALL_STEP = 0.05;    // Prüfabstand für Wände entlang eines Kurvenstücks
 const LINE_WIDTH = 0.15;   // Linienstärke der Kurve in Koordinaten-Einheiten (≈ 5 Pixel)
 const MAX_VALUE = 1e4;     // |y| darüber gilt als „unendlich“ (weit außerhalb des Bildes)
-const JUMP_LIMIT = 0.5;    // ab diesem y-Unterschied zweier Nachbarpunkte wird auf eine Lücke geprüft
+const JUMP_LIMIT = 0.05;   // ab diesem y-Unterschied zweier Nachbarpunkte wird auf eine Unstetigkeit geprüft (≈ 1 Pixel)
 const BLAST_RADIUS = 1;    // Radius des Lochs, das ein Schuss in eine Wand sprengt
 const DRAW_SPACING = 0.04; // Abstand der Punkte zum Zeichnen (≈ 1 Pixel) – gerechnet wird mit allen
 
@@ -825,20 +769,30 @@ function safeEval(f, x) {
   return Number.isFinite(y) && Math.abs(y) < MAX_VALUE ? y : NaN;
 }
 
-// Liegt zwischen zwei Nachbarpunkten ein Sprung (Polstelle)?
-// Test: Ist der Wert in der Mitte NICHT zwischen den beiden Werten,
-// geht die Kurve dort ins Unendliche (z. B. tan oder frac(1;x-3)).
+// Liegt zwischen zwei Nachbarpunkten eine Unstetigkeit (Polstelle oder Sprung)?
+// Intervallhalbierung: Es wird immer die Hälfte mit der größeren Änderung weiter geteilt.
+// Bei einer stetigen Funktion schrumpft die Änderung mit dem Intervall (sie wird
+// irgendwann kleiner als JUMP_LIMIT / 2), bei einem Pol wird die Funktion irgendwo
+// dazwischen riesig/undefiniert, bei einem Sprung (z. B. (x−3)/|x−3| bei x = 3) bleibt
+// die Änderung gleich groß, auch wenn das Intervall winzig ist.
 function isJump(f, u0, u1, y0, y1) {
-  if (Math.abs(y1 - y0) < JUMP_LIMIT) return false;
-  const mid = safeEval(f, (u0 + u1) / 2);
-  if (Number.isNaN(mid)) return true;
-  return mid < Math.min(y0, y1) || mid > Math.max(y0, y1);
-}
-
-// Länge eines Kurvenstücks, soweit es im Spielfeld liegt
-function visibleLength(a, b) {
-  const clampY = y => Math.max(VIEW.yMin, Math.min(VIEW.yMax, y));
-  return Math.hypot(b.x - a.x, clampY(b.y) - clampY(a.y));
+  if (!(Math.abs(y1 - y0) >= JUMP_LIMIT)) return false;
+  let a = u0, b = u1, ya = y0, yb = y1;
+  const change = [];
+  for (let k = 0; k < 60; k++) {
+    const d = Math.abs(yb - ya);
+    if (d < JUMP_LIMIT / 2) return false;
+    change.push(d);
+    const m = (a + b) / 2;
+    if (m === a || m === b) break;             // genauer geht es mit Kommazahlen nicht
+    const ym = safeEval(f, m);
+    if (Number.isNaN(ym)) return true;         // Pol oder Lücke dazwischen
+    if (Math.abs(ym - ya) >= Math.abs(yb - ym)) { b = m; yb = ym; } else { a = m; ya = ym; }
+  }
+  // Ganz steile, aber stetige Stellen (z. B. die 9. Wurzel bei 0) schrumpfen langsam, aber
+  // stetig; ein echter Sprung schrumpft gar nicht mehr.
+  const last = change[change.length - 1];
+  return last > 0.75 * change[Math.max(0, change.length - 21)];
 }
 
 // Punkt auf der Strecke a–b beim Anteil t (0 = a, 1 = b)
@@ -846,13 +800,15 @@ function lerpPoint(a, b, t) {
   return { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y), s: 0 };
 }
 
-// Läuft die Strecke a–b in eine Wand? Die Strecke wird in kleinen Schritten
-// (WALL_STEP) abgetastet – nur der Teil innerhalb des Spielfelds.
-// Ergebnis: Anteil t des letzten freien Punktes vor der Wand, oder null.
+// Läuft die Strecke a–b in eine Wand? Exakt gerechnet: Die Strecke wird Kästchen für
+// Kästchen verfolgt (in der Reihenfolge, in der sie die Kästchen betritt) – nur der Teil
+// innerhalb des Spielfelds. Ergebnis: Anteil t, an dem sie das erste Wand-Kästchen
+// betritt (der Punkt liegt genau auf dem Rand der Wand), oder null.
 function wallHit(a, b, grid) {
   if (!grid) return null;
   let t0 = 0;
   let t1 = 1;
+  const dx = b.x - a.x;
   const dy = b.y - a.y;
   if (dy !== 0) {
     const tA = (VIEW.yMin - a.y) / dy;
@@ -864,20 +820,31 @@ function wallHit(a, b, grid) {
   }
   if (t0 > t1) return null;
 
-  const n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, dy) * (t1 - t0) / WALL_STEP));
-  let free = t0;
-  for (let i = 0; i <= n; i++) {
-    const t = t0 + (t1 - t0) * i / n;
-    if (isWall(grid, a.x + t * (b.x - a.x), a.y + t * dy)) return free;
-    free = t;
+  // Kästchen-Koordinaten: Spalte = u, Zeile = v (zählt nach unten)
+  const u0 = a.x - VIEW.xMin, du = dx;
+  const v0 = VIEW.yMax - a.y, dv = -dy;
+  const u = u0 + t0 * du, v = v0 + t0 * dv;
+  // Startkästchen: das, in das die Strecke hineinläuft (wichtig, wenn sie auf einer Kante beginnt)
+  let c = du < 0 ? Math.ceil(u) - 1 : Math.floor(u);
+  let r = dv < 0 ? Math.ceil(v) - 1 : Math.floor(v);
+  const stepC = du > 0 ? 1 : -1, stepR = dv > 0 ? 1 : -1;
+  let nextC = du > 0 ? (c + 1 - u0) / du : du < 0 ? (c - u0) / du : Infinity;   // t an der nächsten senkrechten Kante
+  let nextR = dv > 0 ? (r + 1 - v0) / dv : dv < 0 ? (r - v0) / dv : Infinity;   // … waagerechten Kante
+  const deltaC = du !== 0 ? Math.abs(1 / du) : Infinity;
+  const deltaR = dv !== 0 ? Math.abs(1 / dv) : Infinity;
+  let t = t0;
+  for (;;) {
+    if (r >= 0 && r < ROWS && c >= 0 && c < COLS && grid[r][c] === CELL.WALL) return t;
+    if (nextC < nextR) { t = nextC; c += stepC; nextC += deltaC; } else { t = nextR; r += stepR; nextR += deltaR; }
+    if (t > t1) return null;
   }
-  return null;
 }
 
 // Profi-Modi wie bei Graphwar: löst y′ = f(x, y) bzw. y″ = f(x, y, y′) Schritt für
-// Schritt (Runge-Kutta 4. Ordnung). Start im Spieler (x = 0, y = 0), bei y″ mit der
-// Startsteigung shape.slope. Ergebnis: Funktion, die bis zum nächsten x (relativ zum
-// Spieler) weiterrechnet und die Höhe y liefert (NaN = nicht mehr definiert).
+// Schritt (Runge-Kutta 4. Ordnung) im Koordinatensystem des Spielers. Anfangswert:
+// y(0) = 0 (im Spieler), bei y″ zusätzlich y′(0) = shape.slope.
+// Ergebnis: Funktion, die bis zum nächsten x weiterrechnet und y liefert
+// (NaN = nicht mehr definiert).
 function odeStepper(shape) {
   let u = 0;
   let y = 0;
@@ -904,29 +871,34 @@ function odeStepper(shape) {
   };
 }
 
-// Berechnet den Schuss: y = py + f(x − px) − f(0), vom Spieler aus in Richtung dir
-// (+1 rechts, −1 links), bis er endet (siehe oben). limit = höchste Kurvenlänge –
-// nur für Probeschüsse (lineCanHit), ein echter Schuss hat keine Grenze.
+// Berechnet den Schuss: y(x) = f(x) − f(0) im Koordinatensystem des Spielers,
+// von ihm aus nach rechts (dir = 1, x ≥ 0) oder nach links (dir = −1, x ≤ 0), bis er
+// endet (siehe oben). Die Punkte werden in Welt-Koordinaten gespeichert: Steht der
+// Spieler gespiegelt, läuft „rechts“ in der Welt nach links. limit = höchste Kurvenlänge – nur für Probeschüsse (lineCanHit), ein
+// echter Schuss hat keine Grenze.
 // f ist eine Funktion – oder in den Profi-Modi { order, fn, slope } (Differentialgleichung).
-// Ergebnis: { points, length, end, endReason, blocked }
-function buildArm(f, player, dir, grid, limit = Infinity) {
+// Ergebnis: { points, length, end, endReason, blocked, dir }
+function buildArm(f, player, grid, limit = Infinity, dir = 1) {
   const shape = typeof f === 'function' ? null : f;
+  const mirror = mirrorOf(player);
   const f0 = shape ? 0 : safeEval(f, 0);
   const points = [];
   let length = 0;
   let endReason = 'edge';
-  if (Number.isNaN(f0)) return { points, length, end: null, endReason: 'undefined', blocked: false };
+  if (Number.isNaN(f0)) return { points, length, end: null, endReason: 'undefined', blocked: false, dir };
 
-  const distance = dir > 0 ? VIEW.xMax - player.x : player.x - VIEW.xMin;
+  const own = ownX(player.x, player);
+  const distance = dir > 0 ? VIEW.xMax - own : own - VIEW.xMin;   // bis zum Rand in Schussrichtung (eigene Ansicht)
   const steps = Math.ceil(distance / STEP);
-  const g = shape ? null : x => player.y + f(x - player.x) - f0;   // y-Wert im Spielfeld (x relativ zum Spieler)
+  const g = shape ? null : x => player.y + f(mirror * (x - player.x)) - f0;   // Höhe der Kurve über dem Welt-x
   const step = shape ? odeStepper(shape) : null;
   let prevX = player.x;
   let prevY = player.y;
 
   for (let i = 0; i <= steps; i++) {
-    const x = player.x + dir * Math.min(i * STEP, distance);
-    const y = i === 0 ? player.y : step ? player.y + step(x - player.x) : safeEval(g, x);
+    const u = dir * Math.min(i * STEP, distance);  // eigenes x (vom Spieler aus, links negativ)
+    const x = player.x + mirror * u;               // Welt-x
+    const y = i === 0 ? player.y : step ? player.y + step(u) : safeEval(g, x);
     if (Number.isNaN(y)) { endReason = 'undefined'; break; }
     if (i > 0 && g && isJump(g, prevX, x, prevY, y)) { endReason = 'jump'; break; }
 
@@ -962,14 +934,15 @@ function buildArm(f, player, dir, grid, limit = Infinity) {
     prevY = y;
   }
   return {
-    points, length, endReason,
+    points, length, endReason, dir,
     get drawPoints() { return this._draw || (this._draw = thinPoints(points)); },   // erst beim Zeichnen berechnet
     end: points[points.length - 1] || null,
     blocked: endReason === 'wall',
   };
 }
 
-// Berechnet den ganzen Schuss. Ergebnis: { arms: [arm], f0, dir } oder { error }
+// Berechnet den ganzen Schuss. dir: 1 = nach rechts, −1 = nach links.
+// Ergebnis: { arms: [arm], f0, dir, ode } oder { error }
 // (arms ist eine Liste, damit Zeichnen und Treffererkennung allgemein bleiben)
 function buildCurve(f, player, grid = null, dir = 1) {
   const shape = typeof f === 'function' ? null : f;
@@ -977,24 +950,23 @@ function buildCurve(f, player, grid = null, dir = 1) {
     odeVars.y = 0;
     odeVars.p = shape.slope || 0;
     if (!Number.isFinite(shape.fn(0))) {
-      return { error: 'Deine Gleichung ist bei dir (x = 0, y = 0) nicht definiert – so kann nicht geschossen werden.' };
+      return { error: 'Bei (0 | 0) nicht definiert' };
     }
-    const arm = buildArm(f, player, dir, grid);
-    if (arm.points.length < 2) return { error: 'Die Gleichung ist direkt neben dir nicht lösbar – der Schuss käme nicht vom Fleck.' };
+    const arm = buildArm(f, player, grid, Infinity, dir);
+    if (arm.points.length < 2) return { error: 'Neben dir nicht lösbar' };
     return { arms: [arm], f0: 0, dir, ode: true };
   }
   const f0 = safeEval(f, 0);
   if (Number.isNaN(f0)) {
     const raw = f(0);
     if (Number.isFinite(raw)) {
-      return { error: `Deine Funktion ist bei dir (x = 0) viel zu groß (${raw.toExponential(1)}) – so weit kann kein Schuss verschoben werden.` };
+      return { error: 'f(0) ist zu groß' };
     }
-    return { error: 'Deine Funktion ist bei dir (x = 0) nicht definiert – so kann nicht geschossen werden. ' +
-      'Beispiel: 1/x hat bei x = 0 eine Lücke – nimm z. B. 1/(x+1).' };
+    return { error: 'f(0) nicht definiert' };
   }
-  const arm = buildArm(f, player, dir, grid);
+  const arm = buildArm(f, player, grid, Infinity, dir);
   if (arm.points.length < 2) {
-    return { error: 'Deine Funktion ist direkt neben dir nicht definiert – der Schuss käme nicht vom Fleck.' };
+    return { error: 'Neben dir nicht definiert' };
   }
   return { arms: [arm], f0, dir };
 }
@@ -1130,11 +1102,12 @@ function isWallSpot(grid, c, r) {
   return true;
 }
 
-// Sucht ein freies Kreuz für den Spieler (mit Abstand zum Rand). Sein
-// 2×2-Block und der Ring drumherum müssen leer sein.
+// Sucht ein freies Kreuz für den Spieler (mit Abstand zum Rand) in der linken
+// Hälfte (x ≤ −3) – geschossen wird standardmäßig nach rechts. Sein 2×2-Block und der
+// Ring drumherum müssen leer sein.
 function findPlayerCross(grid, avoid = null) {
   for (let tries = 0; tries < 500; tries++) {
-    const c = randomInt(3, COLS - 3);
+    const c = randomInt(3, COLS / 2 - 3);
     const r = randomInt(2, ROWS - 2);
     if (avoid && Math.max(Math.abs(c - avoid.c), Math.abs(r - avoid.r)) < 6) continue;
     if (isRegionFree(grid, c - 2, r - 2, c + 1, r + 1)) return { c, r };
@@ -1225,19 +1198,6 @@ function placeWalls(grid, count, protectedCells, playerCross, enemyCells) {
   }
 }
 
-// Spiegelt eine Eingabe nach links: Jedes x wird zu (-x) – das Minus direkt
-// vor x dreht die Richtung um. Der Buchstabe x darf nur als Variable vorkommen.
-function mirrorX(input) {
-  return input.replace(/x/g, '(-x)').replace(/\(\(-x\)\)/g, '(-x)');
-}
-
-// Schussrichtung für die Generierung: Steht der Spieler rechts der Mitte, wird
-// meist nach links geschossen (dort ist mehr Platz).
-function maybeMirror(input, player) {
-  const left = Math.random() < (player.x > 0 ? 0.8 : 0.2);
-  return left ? mirrorX(input) : input;
-}
-
 // Spielt die Lösung einer Karte durch: Sind danach alle Gegner zerstört?
 function isSolvable(map) {
   const { player, enemies } = readMap(map.grid);
@@ -1245,7 +1205,7 @@ function isSolvable(map) {
   for (const input of map.solution) {
     const result = compileLatex(input);
     if (!result.ok) return false;
-    const curve = buildCurve(result.fn, player, map.grid, result.dir);
+    const curve = buildCurve(result.fn, player, map.grid);
     if (curve.error) return false;
     for (const hit of findHits(curve.arms, enemies)) hit.enemy.hp--;
   }
@@ -1265,9 +1225,9 @@ function generateLevelMap(level) {
     const groups = [];
     for (const shape of level.shapes) {
       for (let tries = 0; tries < 40; tries++) {
-        const input = maybeMirror(SHAPES[shape](), player);
+        const input = SHAPES[shape]();
         const result = compileLatex(input);
-        const curve = buildCurve(result.fn, player, null, result.dir);
+        const curve = buildCurve(result.fn, player, null);
         if (curve.error) continue;
         const cells = pickEnemyCells(curve.arms, grid, player, level.count);
         if (!cells) continue;
@@ -1501,14 +1461,12 @@ function applyMap(map) {
   state.enemies = enemies;
 }
 
-// Füllt die Level-Karte rechts (Titel, Aufgabe, Tipp, Knöpfe)
-function showCard({ num, name, task, hint = null }) {
+// Füllt die Level-Karte rechts (Titel, kurze Aufgabe bzw. Funktionsform, Knöpfe)
+function showCard({ num, name, task = '' }) {
   ui.levelNum.textContent = num;
   ui.levelName.textContent = name;
   ui.levelTask.textContent = task;
-  ui.hintBox.hidden = hint === null;
-  ui.hintBox.open = false;
-  ui.levelHint.textContent = hint || '';
+  ui.levelTask.hidden = !task;
   ui.tutorialNav.hidden = state.mode !== 'tutorial';
   ui.wallsToggle.hidden = state.mode !== 'endless';
   ui.stage.classList.toggle('sandbox', state.mode === 'sandbox');
@@ -1540,8 +1498,8 @@ function loadLevel(index, newMap = true, seed = null, daily = null) {
   state.levelIndex = index;
   state.shotsLeft = state.map.shots;
   resetRound();
-  const num = state.daily ? `TAGES-HERAUSFORDERUNG · ${state.daily}` : `LEVEL ${index + 1} / ${LEVELS.length}`;
-  showCard({ num, name: level.name, task: level.task, hint: level.hint });
+  const num = state.daily ? `TAGES-LEVEL · ${state.daily}` : `LEVEL ${index + 1} / ${LEVELS.length}`;
+  showCard({ num, name: level.name, task: level.form ? `\\(${level.form}\\)` : '' });
   updateLevelWarning();
   updateHUD();
   buildLevelSelect();
@@ -1594,10 +1552,7 @@ function startEditor(code = null) {
   editorSync();
   ui.editorShots.value = editor.shots;
   ui.editorError.textContent = '';
-  showCard({
-    num: 'LEVEL-EDITOR', name: 'Eigene Karte bauen',
-    task: 'Werkzeug wählen, dann ins Feld klicken oder ziehen. Es braucht einen Spieler und mindestens einen Gegner. „Testen“ spielt die Karte, den Code kannst du teilen.',
-  });
+  showCard({ num: 'EDITOR', name: 'Eigene Karte' });
   editorRenderTools();
   updateHUD();
   buildLevelSelect();
@@ -1637,20 +1592,20 @@ function editorRenderTools() {
 
 function editorTest() {
   const { player, enemies } = readMap(state.map.grid);
-  if (!player) { ui.editorError.textContent = 'Setz zuerst den Spieler (Werkzeug „Spieler“).'; return; }
-  if (!enemies.length) { ui.editorError.textContent = 'Setz mindestens einen Gegner.'; return; }
+  if (!player) { ui.editorError.textContent = 'Spieler fehlt'; return; }
+  if (!enemies.length) { ui.editorError.textContent = 'Gegner fehlt'; return; }
   startCustom(encodeMap(state.map.grid, editor.shots));
 }
 
 // Eigene Karte spielen (aus dem Editor oder per Code)
 function startCustom(code) {
   const map = decodeMap(code);
-  if (!map || !readMap(map.grid).player) { showMessage('Dieser Karten-Code ist ungültig.', 'error'); return false; }
+  if (!map || !readMap(map.grid).player) { showMessage('Code ungültig', 'error'); return false; }
   applyMap({ grid: map.grid, shots: map.shots, solution: [], code });
   state.mode = 'custom';
   state.shotsLeft = map.shots;
   resetRound();
-  showCard({ num: 'EIGENE KARTE', name: 'Karte aus dem Editor', task: `Zerstöre alle Gegner mit höchstens ${map.shots} Angriffen.` });
+  showCard({ num: 'EIGENE KARTE', name: 'Eigene Karte' });
   updateLevelWarning();
   updateHUD();
   buildLevelSelect();
@@ -1661,19 +1616,22 @@ function startCustom(code) {
 function drawEditorHover() {
   const m = state.mouse;
   if (!m || !cellAt(m.x, m.y)) return;
-  ctx.save();
-  ctx.strokeStyle = COLORS.curve;
-  ctx.lineWidth = 3;
+  const A = pix.A;
+  let i, j, size;
   if (editor.tool === 'player') {
-    const X = toCanvasX(Math.round(m.x));
-    const Y = toCanvasY(Math.round(m.y));
-    ctx.strokeRect(X - UNIT, Y - UNIT, UNIT * 2, UNIT * 2);
+    i = Math.round(artX(Math.round(m.x))) - A;
+    j = Math.round(artY(Math.round(m.y))) - A;
+    size = 2 * A;
   } else {
-    const cell = cellAt(m.x, m.y);
-    const corner = crossPoint(cell.c, cell.r);
-    ctx.strokeRect(toCanvasX(corner.x), toCanvasY(corner.y), UNIT, UNIT);
+    const corner = crossPoint(cellAt(m.x, m.y).c, cellAt(m.x, m.y).r);
+    i = Math.round(artX(corner.x));
+    j = Math.round(artY(corner.y));
+    size = A;
   }
-  ctx.restore();
+  fill(COLORS.curve, i, j, size, 1);
+  fill(COLORS.curve, i, j + size - 1, size, 1);
+  fill(COLORS.curve, i, j, 1, size);
+  fill(COLORS.curve, i + size - 1, j, 1, size);
 }
 
 function startEndless() {
@@ -1681,12 +1639,7 @@ function startEndless() {
   applyMap(generateEndlessMap(settings.endlessWalls));
   state.score = 0;
   resetRound();
-  showCard({
-    num: 'ENDLOS-MODUS',
-    name: 'Endlos',
-    task: `Unbegrenzte Angriffe, immer neue Gegner. Alle ${ENDLESS_MOVE_EVERY} Schüsse ziehst du an eine neue Stelle um. ` +
-      'Jeder zerstörte Gegner bringt 1 Punkt – versuche, mit einem Schuss möglichst viele zu treffen!',
-  });
+  showCard({ num: 'ENDLOS', name: 'Endlos' });
   updateWallsToggle();
   updateLevelWarning();
   spawnEnemies();
@@ -1703,13 +1656,7 @@ function startSandbox() {
   setPlayer(grid, cross.c, cross.r);
   applyMap({ grid, shots: Infinity, solution: [] });
   resetRound();
-  showCard({
-    num: 'SANDKASTEN',
-    name: 'Funktionen testen',
-    task: `Du stehst genau in der Mitte bei (0 | 0) – ohne Gegner und Wände, mit unbegrenzt vielen Schüssen. ` +
-      `Die letzten ${SANDBOX_TRAILS} Kurven bleiben stehen, so kannst du sie vergleichen. ` +
-      'Klicke ins Feld, um ein Übungsziel zu setzen – nochmal klicken gibt ihm mehr Leben (bis 3), danach verschwindet es. ↻ Neustart räumt alles ab.',
-  });
+  showCard({ num: 'SANDKASTEN', name: 'Sandkasten', task: 'Klick ins Feld setzt ein Ziel.' });
   updateLevelWarning();
   updateHUD();
   buildLevelSelect();
@@ -1746,7 +1693,7 @@ function startTutorial(index = 0) {
   resetRound();
   showCard({ num: `TUTORIAL ${index + 1} / ${steps.length}`, name: step.title, task: step.text });
   const isLast = index === steps.length - 1;
-  ui.tutorialNext.textContent = isLast ? "Los geht's – Level 1 ▶" : 'Weiter ▶';
+  ui.tutorialNext.innerHTML = (isLast ? 'Los! ' : 'Weiter ') + icon('play');
   ui.tutorialNext.disabled = state.enemies.length > 0;     // erst weiter, wenn alle Gegner weg sind
   ui.tutorialSkip.hidden = isLast;
   updateLevelWarning();
@@ -1764,7 +1711,7 @@ function finishTutorial() {
 // man verlässt damit auch die Lobby.
 function switchMode(start) {
   if (state.mode === 'multi') {
-    if (!confirm('Multiplayer verlassen? Du verlässt damit auch die Lobby.')) return;
+    if (!confirm('Lobby verlassen?')) return;
     mpLeave(false);
   }
   start();
@@ -1794,27 +1741,28 @@ function newMap() {
 /* ---------- Eingabe: Modus, Mathe-Tasten, Verlauf ---------- */
 
 const MODE_LABEL = { y: 'f(x) = ', y1: "y' = ", y2: "y'' = " };
-const MODE_PLACEHOLDER = { y: 'z. B. x/2', y1: 'z. B. -y/4 + 1', y2: 'z. B. -y/9' };
+const MODE_PLACEHOLDER = { y: 'x/2', y1: '-y/4+1', y2: '-y/9' };
 
 // Eingabe → Schuss. Im Modus y = … ist es eine Funktion, in den Profi-Modi y′ = … und
-// y″ = … eine Differentialgleichung; Richtung und (bei y″) Startwinkel stehen daneben.
+// y″ = … eine Differentialgleichung; bei y″ steht der Startwinkel daneben.
+// Ergebnis wie compileLatex, dazu shape (Funktion oder Differentialgleichung) und dir (Richtung)
 function compileShot(text) {
   const mode = state.inputMode;
   if (mode !== 'y' && state.mode === 'multi' && mp.lobby && mp.lobby.settings.odeModes === false) {
-    return { ok: false, error: 'Die Profi-Modi y′ und y″ sind in dieser Lobby ausgeschaltet.' };
+    return { ok: false, error: 'y′ und y″ sind aus' };
   }
-  const result = compileLatex(text, 'x', mode);
+  const { dir, text: body } = splitDirection(text);
+  const result = { ...compileLatex(body, 'x', mode), dir };
   if (!result.ok || mode === 'y') return { ...result, shape: result.fn };
-  const dir = Number(ui.odeDir.value) < 0 ? -1 : 1;
   const angle = Math.max(-85, Math.min(85, parseFloat(String(ui.odeAngle.value).replace(',', '.')) || 0));
-  const slope = mode === 'y2' ? dir * Math.tan(angle * Math.PI / 180) : 0;
-  return { ...result, dir, shape: { order: mode === 'y1' ? 1 : 2, fn: result.fn, slope } };
+  const slope = mode === 'y2' ? Math.tan(angle * Math.PI / 180) : 0;   // Startsteigung im eigenen System
+  return { ...result, shape: { order: mode === 'y1' ? 1 : 2, fn: result.fn, slope } };
 }
 
 function setInputMode(mode) {
   state.inputMode = MODE_LABEL[mode] ? mode : 'y';
   ui.fxMode.value = state.inputMode;
-  ui.odeControls.hidden = state.inputMode === 'y';
+  ui.odeControls.hidden = state.inputMode !== 'y2';   // nur y″ braucht den Startwinkel
   ui.odeAngleBox.hidden = state.inputMode !== 'y2';
   ui.input.placeholder = MODE_PLACEHOLDER[state.inputMode];
   ui.keypad.dataset.mode = state.inputMode;
@@ -1840,6 +1788,12 @@ function keypadPress(button) {
   const el = ui.input;
   if (button.dataset.key === 'clear') {
     el.value = '';
+    updatePreview();
+  } else if (button.dataset.key === 'dir') {
+    // „L “ vorne einfügen oder wieder entfernen (Richtung links ↔ rechts)
+    const { dir, text } = splitDirection(el.value);
+    el.value = dir < 0 ? text : 'L ' + el.value.replace(/^\s*[Rr](?![nN]|[oO][gG]|[gG])\s*:?\s*/, '');
+    el.focus();
     updatePreview();
   } else if (button.dataset.key === 'back') {
     const start = el.selectionStart ?? el.value.length;
@@ -1884,20 +1838,28 @@ function browseHistory(step) {
   ui.input.setSelectionRange(ui.input.value.length, ui.input.value.length);
 }
 
+// Schuss geht nicht: Fehler zeigen – aber nicht doppelt, wenn er schon unter der Eingabe steht
+function rejectShot(text) {
+  showMessage(ui.parseStatus.textContent.trim() === text ? '' : text, 'error');
+  ui.input.classList.remove('flash');
+  void ui.input.offsetWidth;          // Animation neu starten
+  ui.input.classList.add('flash');
+}
+
 function fire() {
   if (state.mode === 'multi') { mpFire(); return; }
   if (state.status !== 'playing' || state.shot || (limitedShots() && state.shotsLeft <= 0)) return;
 
   const result = compileShot(ui.input.value);
-  if (!result.ok) { showMessage(result.error, 'error'); return; }
+  if (!result.ok) { rejectShot(result.error); return; }
   const blocked = blockedTypes(result.types);
   if (blocked.length) {
-    showMessage(`In den Einstellungen deaktiviert: ${typeNames(blocked)}.`, 'error');
+    rejectShot(`Aus: ${typeNames(blocked)}`);
     return;
   }
 
   const curve = buildCurve(result.shape, state.player, state.map.grid, result.dir);
-  if (curve.error) { showMessage(curve.error, 'error'); return; }
+  if (curve.error) { rejectShot(curve.error); return; }
 
   if (limitedShots()) state.shotsLeft--;
   rememberInput(ui.input.value);
@@ -1907,32 +1869,10 @@ function fire() {
     progress: 0,      // bisher gezeichnete Kurvenlänge pro Arm
     nextHit: 0,
     kills: 0,
-    info: originInfo(curve) + ' ' + lengthInfo(curve.arms),
   };
   spawnParticles(toCanvasX(state.player.x), toCanvasY(state.player.y), 14, ['#fff3a8', COLORS.curve, '#ffffff'], 220);
-  showMessage('Schuss! ' + state.shot.info);
+  showMessage('');
   updateHUD();
-}
-
-// Erklärt die Verschiebung durch den Spieler: y = f(x) − f(0) in seinem Koordinatensystem
-function originInfo(curve) {
-  if (curve.ode) return `Schuss nach ${curve.dir > 0 ? 'rechts' : 'links'}: Differentialgleichung, startet in dir.`;
-  const shift = Math.abs(curve.f0) < 1e-9 ? 'die Kurve geht schon durch dich'
-    : `f(0) = ${formatNumber(curve.f0)}, die Kurve wurde so verschoben, dass sie durch dich geht`;
-  return `Schuss nach ${curve.dir > 0 ? 'rechts' : 'links'}: ${shift}.`;
-}
-
-// Warum ein Schuss endet (siehe buildArm)
-const END_REASONS = {
-  wall: 'Wand getroffen', out: 'aus dem Feld geflogen', edge: 'Rand erreicht',
-  undefined: 'Funktion nicht mehr definiert', jump: 'Sprungstelle',
-};
-
-// Zeigt, wie lang der Schuss geworden ist und warum er endet
-function lengthInfo(arms) {
-  const reason = arms[0].endReason;
-  const hole = reason === 'wall' && wallsBreakable() ? ', Loch gesprengt' : '';
-  return `Kurvenlänge ${formatNumber(arms[0].length, 1)} (${END_REASONS[reason]}${hole}).`;
 }
 
 function updateShot(dt) {
@@ -1972,19 +1912,19 @@ function finishShot() {
   const n = shot.hits.length;
   if (state.mode === 'sandbox') {
     state.shotsFired++;
-    showMessage((n ? `Treffer! ${n} Ziel${n === 1 ? '' : 'e'} getroffen. ` : '') + shot.info, n ? 'good' : '');
+    showMessage(n ? `Treffer ×${n}` : '', 'good');
     updateHUD();
     return;
   }
-  if (n === 0) showMessage('Daneben! Kein Gegner getroffen. ' + shot.info);
-  else showMessage(`Treffer! ${n} Gegner getroffen. ${shot.info}`, 'good');
+  if (n === 0) showMessage('Daneben');
+  else showMessage(`Treffer ×${n}`, 'good');
 
   if (state.mode === 'tutorial') {
     state.shotsFired++;
     if (aliveEnemies().length === 0) {
       state.status = 'won';
       ui.tutorialNext.disabled = false;
-      showMessage('Super, geschafft! Klicke rechts auf „Weiter“.', 'good');
+      showMessage('Geschafft!', 'good');
       ui.tutorialNext.focus();
     }
     updateHUD();
@@ -2053,18 +1993,18 @@ function endlessAfterShot(shot) {
   }
 
   let text;
-  if (shot.hits.length === 0) text = 'Daneben! Kein Gegner getroffen.';
-  else if (kills === 0) text = `Treffer! ${shot.hits.length} Gegner beschädigt, aber keiner zerstört.`;
-  else text = `${kills} Gegner zerstört (+${kills} Punkte).` + (kills >= 2 ? ` KOMBO ×${kills}!` : '');
+  if (shot.hits.length === 0) text = 'Daneben';
+  else if (kills === 0) text = `Treffer ×${shot.hits.length}`;
+  else text = `+${kills}` + (kills >= 2 ? ` · Kombo ×${kills}!` : '');
 
   state.enemies = aliveEnemies();
   if (state.shotsFired % ENDLESS_MOVE_EVERY === 0) {
     relocatePlayer();
-    text += ' Umzug! Dein Koordinatensystem zieht mit dir um.';
+    text += ' · Umzug';
   }
   spawnEnemies();
   ensureReachable();
-  showMessage(text + ' ' + shot.info, kills ? 'good' : '');
+  showMessage(text, kills ? 'good' : '');
   updateHUD();
 }
 
@@ -2096,13 +2036,14 @@ function relocatePlayer() {
 
 // Probeschuss: Trifft eine Gerade vom Spieler aus diesen Gegner? Benutzt genau
 // dieselbe Kurven- und Treffererkennung wie ein echter Schuss (inkl. Wände).
-// Gegner direkt über/unter dem Spieler: sehr steile Gerade (Steigung ±1000).
-// Berechnet wird nur der Arm in Richtung des Gegners, bis kurz hinter ihn.
+// Geprüft wird nur nach rechts (die Standardrichtung) – Gegner links oder direkt
+// über/unter dem Spieler zählen nicht als treffbar. Berechnet wird nur bis kurz hinter den Gegner.
 function lineCanHit(enemy) {
-  const dx = enemy.x - state.player.x;
+  const dx = ownX(enemy.x, state.player) - ownX(state.player.x, state.player);
   const dy = enemy.y - state.player.y;
-  const m = dx === 0 ? Math.sign(dy) * 1000 : dy / dx;
-  const arm = buildArm(x => m * x, state.player, dx < 0 ? -1 : 1, state.map.grid, Math.hypot(dx, dy) + 1);   // f(x) = m·x, durch den Spieler verschoben
+  if (dx < 1) return false;
+  const m = dy / dx;
+  const arm = buildArm(x => m * x, state.player, state.map.grid, Math.hypot(dx, dy) + 1);   // f(x) = m·x, durch den Spieler verschoben
   return findHits([arm], [{ ...enemy, hp: 1 }]).length === 1;
 }
 
@@ -2114,6 +2055,7 @@ function findReachableCell(grid, preferNear) {
     const r = randomInt(1, ROWS - 1);
     if (nearPlayer(c, r, state.player) || !isAreaFree(grid, c, r)) continue;
     const center = cellCenter(c, r);
+    if (ownX(center.x, state.player) - ownX(state.player.x, state.player) < 1) continue;   // nur rechts vom Spieler
     if (preferNear && tries < 600 && Math.hypot(center.x - state.player.x, center.y - state.player.y) > ENDLESS_NEAR) continue;
     if (wallHit(state.player, center, grid) !== null) continue;              // schnelle Vorprüfung
     if (!lineCanHit({ ...center, r: ENEMY_RADIUS[1] })) continue;            // echter Probeschuss
@@ -2213,131 +2155,281 @@ function updateEffects(dt) {
 }
 
 /* ==========================================================
-   7. ZEICHNEN
+   7. ZEICHNEN (Pixel-Grafik)
+   Das Spielfeld ist ein Raster aus „Kunst-Pixeln“: Jede Einheit
+   des Koordinatensystems ist pix.A Kunst-Pixel breit, jedes
+   Kunst-Pixel pix.K × pix.K echte Bildschirmpixel. fitCanvas
+   wählt beides passend zu Fenstergröße und Bildschirm-Auflösung
+   (auch 125 %, 150 %, 4K …). Gezeichnet wird direkt in
+   Bildschirmpixeln und nur auf ganzen Kunst-Pixeln – nichts wird
+   hochskaliert oder geglättet, deshalb ist alles immer scharf.
+   Kurven werden als Pixel-Linie gestempelt; gerechnet (Treffer,
+   Wände) wird weiterhin exakt mit den Punkten aus Abschnitt 4.
    ========================================================== */
 
 const COLORS = {
-  paper: '#fbf7ec',
-  grid: '#efe8d6',
-  gridStrong: '#ddd1b5',
-  ink: '#2b2840',
-  label: '#5f5872',
+  paper: '#f6e9c9',       // Pergament des Spielfelds
+  paperDark: '#ead8ae',   // Fasern / Flecken im Pergament
+  paperLight: '#fcf3dc',
+  paperEdge: ['#d9bf8a', '#e6d0a0', '#efdeb6'],   // dunkler werdender Rand (außen → innen)
+  parchment: '#fff6df',   // Schildchen auf dem Feld (Mausanzeige, Banner)
+  grid: '#e6d2a6',
+  gridStrong: '#d9c08c',
+  ink: '#2a1d2e',
+  label: '#5a4636',
   curve: '#e0218a',
   curveHalo: '#ffffff',
-  trail: 'rgba(224, 33, 138, 0.22)',
-  player: '#2f6fdb',
-  playerDark: '#1b3f8f',
-  axes: '#1b3f8f',   // Achsen des Spieler-Koordinatensystems
-  // Gegnerfarben nach Lebenspunkten: [Füllung, Umriss, Glanz]
+  trail: '#f3bfd8',
+  player: '#3b6fe0',
+  playerDark: '#23449a',
+  axes: '#23449a',
+  // Schleim-Gegner nach Lebenspunkten: [Körper, Umriss, Glanz, Schatten]
   enemy: {
-    1: ['#f6a74b', '#a8571a', '#fcd49a'],
-    2: ['#e8573a', '#8f2a18', '#f6a08c'],
-    3: ['#9b4dca', '#4f1f72', '#cfa4ea'],
+    1: ['#6cc35a', '#2f6e36', '#c2f0a0', '#4fa246'],
+    2: ['#f39a3d', '#97461a', '#ffd79a', '#d9772a'],
+    3: ['#9b5bd6', '#4a2678', '#dcbcf8', '#7a44b8'],
   },
-  wall: { light: '#cfcbe0', base: '#9a96b0', mortar: '#716d88', dark: '#4d4a63' },
-  hpFull: '#d64545',
-  hpEmpty: '#efe6d2',
+  wall: { light: '#dcd9e8', base: '#aca8c3', mortar: '#757090', dark: '#4d4866', moss: '#79ad5f' },
+  gold: '#f2c14e',
+  goldDark: '#c98a1e',
+  hpFull: '#e0393e',
+  hpLight: '#ff9a9a',
+  hpEmpty: '#e2d3b4',
+  skin: '#f6c8a0',
+  beard: '#ffffff',
+  beardDark: '#d9d2e0',
 };
 
-const PIXEL = 3;   // Größe eines „Kunst-Pixels“ in Canvas-Pixeln
+const TEXT_SIZE = 56 / 3;   // Jersey 10 ist auf einem Raster gezeichnet: 1 Schrift-Pixel = 1/18,667 der Schriftgröße
+const FONT = '"Jersey 10", "Segoe UI", sans-serif';
+const OUTLINE = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
 
 let canvas, ctx;
-let renderScale = 1;
+// U: Bildschirmpixel pro Einheit, K: Bildschirmpixel pro Kunst-Pixel, A: Kunst-Pixel pro Einheit (U = K · A),
+// T: Bildschirmpixel pro Pixel der Oberfläche (--p), S: Bildschirmpixel pro Schrift-Pixel (1,5 · T, wie die
+// Schrift der Oberfläche – bei T = 2 genau 3, also exakt auf dem Raster)
+const pix = { U: 30, K: 3, A: 10, T: 1, S: 1.5 };
 const spriteCache = new Map();
 
-function enemyColors(enemy) {
-  return COLORS.enemy[Math.min(enemy.maxHp, 3)];
+/* ---------- Kunst-Pixel ---------- */
+
+// Welt-Koordinaten → Kunst-Pixel (Kommazahl; 0 = linker bzw. oberer Rand des Feldes)
+function artX(x) { return toCanvasX(x) / UNIT * pix.A; }
+function artY(y) { return toCanvasY(y) / UNIT * pix.A; }
+// Logische Canvas-Pixel (1500 × 900, z. B. Funken) → Kunst-Pixel
+function logToArt(v) { return v / UNIT * pix.A; }
+
+// Rechteck aus Kunst-Pixeln
+function fill(color, i, j, w = 1, h = 1) {
+  ctx.fillStyle = color;
+  ctx.fillRect(i * pix.K, j * pix.K, w * pix.K, h * pix.K);
 }
 
-// Erzeugt ein kleines Bild aus einer Zeichen-Vorlage (1 Zeichen = 1 Kunst-Pixel)
-function spriteFromRows(key, rows, palette) {
+// Kleines Bild aus einer Zeichen-Vorlage (1 Zeichen = 1 Kunst-Pixel), auf Wunsch gespiegelt
+function spriteFromRows(key, rows, palette, flip = false) {
+  key += flip ? '|flip' : '';
   if (spriteCache.has(key)) return spriteCache.get(key);
   const sprite = document.createElement('canvas');
-  sprite.width = rows[0].length;
+  sprite.width = Math.max(...rows.map(row => row.length));
   sprite.height = rows.length;
   const g = sprite.getContext('2d');
   rows.forEach((row, y) => [...row].forEach((ch, x) => {
-    if (palette[ch]) { g.fillStyle = palette[ch]; g.fillRect(x, y, 1, 1); }
+    if (!palette[ch]) return;
+    g.fillStyle = palette[ch];
+    g.fillRect(flip ? sprite.width - 1 - x : x, y, 1, 1);
   }));
   spriteCache.set(key, sprite);
   return sprite;
 }
 
-// Pixel-Art-Kreis mit Augen als kleines Bild (1 Bildpunkt = 1 Kunst-Pixel).
-// Wird später mit PIXEL-facher Größe ohne Glättung gezeichnet.
-function enemySprite(cells, colors, flash) {
-  const key = `${cells}|${colors[0]}|${flash}`;
-  if (spriteCache.has(key)) return spriteCache.get(key);
+// Sprite mit der linken oberen Ecke auf Kunst-Pixel (i, j) – genau K-fach vergrößert, ohne Glättung
+function blit(sprite, i, j) {
+  ctx.drawImage(sprite, i * pix.K, j * pix.K, sprite.width * pix.K, sprite.height * pix.K);
+}
 
-  const size = cells * 2;
+/* ---------- Pixel-Schrift ---------- */
+
+function setFont(scale) {
+  ctx.font = `${TEXT_SIZE * scale}px ${FONT}`;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+}
+
+function textWidth(text, scale = pix.S) {
+  setFont(scale);
+  return Math.round(ctx.measureText(text).width);
+}
+
+// Text auf ganzen Bildschirmpixeln (x, y in Bildschirmpixeln, y = Grundlinie).
+// outline: Farbe für einen etwa 1 Schrift-Pixel breiten Rand rundherum (lesbar auf Kurven und Wänden),
+// immer ganze Bildschirmpixel breit
+function pixelText(text, x, y, color, { align = 'left', outline = null, scale = pix.S } = {}) {
+  const w = textWidth(text, scale);
+  const left = Math.round(align === 'center' ? x - w / 2 : align === 'right' ? x - w : x);
+  y = Math.round(y);
+  if (outline) {
+    const o = Math.max(1, Math.round(scale / 1.5));
+    ctx.fillStyle = outline;
+    for (const [dx, dy] of OUTLINE) ctx.fillText(text, left + dx * o, y + dy * o);
+  }
+  ctx.fillStyle = color;
+  ctx.fillText(text, left, y);
+  return w;
+}
+
+// Kasten mit Stufen-Ecken (wie die Rahmen der Oberfläche), alles in Bildschirmpixeln
+function pixelPanel(x, y, w, h, background, border = COLORS.ink, b = pix.T * 2) {
+  [x, y, w, h] = [x, y, w, h].map(Math.round);
+  ctx.fillStyle = 'rgba(46, 34, 54, 0.18)';
+  ctx.fillRect(x + b, y + h + b, w, b);   // Schatten
+  ctx.fillStyle = border;
+  ctx.fillRect(x, y - b, w, h + 2 * b);
+  ctx.fillRect(x - b, y, w + 2 * b, h);
+  ctx.fillStyle = background;
+  ctx.fillRect(x, y, w, h);
+}
+
+/* ---------- Figuren ---------- */
+
+// Zauberer (schaut nach rechts). Er hält die Zauberkugel – ihre Mitte ist der Nullpunkt (0 | 0),
+// dort beginnt jede Kurve. Zeichen: o Umriss, h/d Hut, g/G Goldband, s Haut, e Auge,
+// w/v Bart, r/R Gewand, * + k Zauberkugel
+const WIZARD_SPRITE = [
+  '....oo...........',
+  '...ohdo..........',
+  '...ohhdo.........',
+  '....ohhdo........',
+  '....ohhhdo.......',
+  '...ohhhhhdo......',
+  '..oggggggGGo.....',
+  '.oohhhhhhhhoo....',
+  '...osssssesoooo..',
+  '...owssssswoo++o.',
+  '..orwwwwwwss+***o',
+  '..orrwwwwvRo****o',
+  '.orrrrwvvRRoo*ko.',
+  '.orrrrrrRRRRooo..',
+  '.orrrrrrrRRRo....',
+  '..oooooooooo.....',
+];
+const WIZARD_ANCHOR = { x: 14, y: 11 };   // Kunst-Pixel-Ecke in der Mitte der Kugel
+
+// color/dark: Gewand und Hut, orb: Farbe der Zauberkugel (= Farbe der Kurve)
+function wizardSprite(color, dark, orb, flip) {
+  return spriteFromRows(`wiz|${color}|${orb}`, WIZARD_SPRITE, {
+    o: COLORS.ink, h: color, d: dark, r: color, R: dark, g: COLORS.gold, G: COLORS.goldDark,
+    s: COLORS.skin, e: COLORS.ink, w: COLORS.beard, v: COLORS.beardDark,
+    '*': orb, '+': '#ffffff', k: dark,
+  }, flip);
+}
+
+// Zauberer mit der Kugel auf der Kunst-Pixel-Ecke (oi, oj); face = 1 schaut nach rechts, −1 nach links.
+// Gibt die obere und untere Kante zurück (für Namen darüber).
+function drawWizard(oi, oj, color, dark, orb, face = 1) {
+  const sprite = wizardSprite(color, dark, orb, face < 0);
+  const ax = face < 0 ? sprite.width - WIZARD_ANCHOR.x : WIZARD_ANCHOR.x;
+  const top = oj - WIZARD_ANCHOR.y;
+  blit(sprite, oi - ax, top);
+  return { top, bottom: top + sprite.height };
+}
+
+// Schleim als Pixel-Kreis mit Radius R Kunst-Pixeln – genau so groß wie seine Trefferfläche.
+// hp: 2 bekommt böse Augenbrauen (die Krone für 3 kommt in drawEnemies dazu)
+function slimeSprite(R, hp, colors, flash) {
+  const key = `slime|${R}|${hp}|${colors[0]}|${flash}`;
+  if (spriteCache.has(key)) return spriteCache.get(key);
+  const size = 2 * R;
   const sprite = document.createElement('canvas');
   sprite.width = sprite.height = size;
   const g = sprite.getContext('2d');
+  const put = (x, y, color, w = 1, h = 1) => { g.fillStyle = color; g.fillRect(x, y, w, h); };
+  const inside = (x, y) => x >= 0 && y >= 0 && x < size && y < size && (x + 0.5 - R) ** 2 + (y + 0.5 - R) ** 2 <= R * R;
+  const [body, line, light, shade] = flash ? ['#ffffff', '#ffffff', '#ffffff', '#ffffff'] : colors;
 
-  for (let j = 0; j < size; j++) {
-    for (let i = 0; i < size; i++) {
-      const dx = i + 0.5 - cells;
-      const dy = j + 0.5 - cells;
-      const d = Math.hypot(dx, dy);
-      if (d > cells) continue;
-      let color = flash ? '#ffffff' : colors[0];
-      if (d > cells - 1.2) color = colors[1];                                     // Umriss
-      else if (!flash && dx + dy < -cells * 0.75 && d < cells * 0.8) color = colors[2];  // Glanzlicht
-      g.fillStyle = color;
-      g.fillRect(i, j, 1, 1);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (!inside(x, y)) continue;
+      const edge = !inside(x - 1, y) || !inside(x + 1, y) || !inside(x, y - 1) || !inside(x, y + 1);
+      const lit = (x + 0.5 - R * 0.75) ** 2 + (y + 0.5 - R * 0.7) ** 2 <= (R * 1.05) ** 2;
+      put(x, y, edge ? line : lit ? body : shade);
     }
   }
+  if (flash) { spriteCache.set(key, sprite); return sprite; }
 
-  // Augen
-  const eye = Math.max(1, Math.round(cells / 5));
-  const eyeY = cells - Math.round(cells * 0.3);
-  const eyeX = Math.round(cells * 0.42);
-  g.fillStyle = COLORS.ink;
-  g.fillRect(cells - eyeX, eyeY, eye, eye + 1);
-  g.fillRect(cells + eyeX - eye, eyeY, eye, eye + 1);
+  // Glanzlicht oben links
+  const gx = Math.round(R * 0.45);
+  const gy = Math.round(R * 0.4);
+  put(gx, gy, light, R >= 5 ? 2 : 1, 1);
+  if (R >= 5) put(gx, gy + 1, light);
 
+  // Augen (mit Lichtpunkt, wenn groß genug), Mund und bei 2 Leben Augenbrauen
+  const ew = R >= 8 ? 2 : 1;
+  const eh = R >= 6 ? 3 : 2;
+  const d = Math.max(1, Math.round(R * 0.28));
+  const top = Math.round(R * 0.85);
+  const lx = R - d - ew;
+  const rx = R + d;
+  put(lx, top, COLORS.ink, ew, eh);
+  put(rx, top, COLORS.ink, ew, eh);
+  if (ew === 2) { put(lx, top, '#ffffff'); put(rx, top, '#ffffff'); }
+  if (R >= 6) put(R - 1, top + eh + 1, COLORS.ink, 2, 1);
+  if (hp === 2 && R >= 4) {
+    put(lx - 1, top - 2, COLORS.ink); put(lx, top - 1, COLORS.ink, ew, 1);
+    put(rx + ew, top - 2, COLORS.ink); put(rx, top - 1, COLORS.ink, ew, 1);
+  }
   spriteCache.set(key, sprite);
   return sprite;
 }
 
-// Spielerfigur ('#' = Körper, 'o' = Auge, 'd' = dunkel)
-const PLAYER_SPRITE = [
-  '..dddd..',
-  '.d####d.',
-  'd##o#o#d',
-  'd######d',
-  'd######d',
-  '.d####d.',
-  '..d..d..',
+// Krone für Schleime mit 3 Leben
+const CROWN_SPRITE = [
+  'g..g..g',
+  'gg.g.gg',
+  'ggggggg',
+  'GrGGGrG',
 ];
 
-// Wandblock: 12 × 12 Kunst-Pixel = genau ein Kästchen
-// ('h' = Licht, 'b' = Stein, 'm' = Fuge, 'd' = Schatten)
-const WALL_SPRITE = [
-  'hhhhhhhhhhhd',
-  'hbbbbmbbbbbd',
-  'hbbbbmbbbbbd',
-  'hbbbbmbbbbbd',
-  'mmmmmmmmmmmd',
-  'hbbmbbbbbmbd',
-  'hbbmbbbbbmbd',
-  'hbbmbbbbbmbd',
-  'mmmmmmmmmmmd',
-  'hbbbbbmbbbbd',
-  'hbbbbbmbbbbd',
-  'dddddddddddd',
+// Herz für die Lebenspunkte (auch für Power-ups und Spieler im Multiplayer)
+const HEART_SPRITE = [
+  '.#.#.',
+  '#+###',
+  '.###.',
+  '..#..',
 ];
+
+// Lebenspunkte als Herzen, mittig über ci, Unterkante bei Kunst-Pixel-Zeile bottom
+function drawHearts(ci, bottom, hp, max) {
+  const total = max * 6 - 1;
+  const left = ci - Math.floor(total / 2);
+  for (let n = 0; n < max; n++) {
+    const full = n < hp;
+    const sprite = spriteFromRows('heart' + full, HEART_SPRITE, full
+      ? { '#': COLORS.hpFull, '+': COLORS.hpLight } : { '#': COLORS.hpEmpty, '+': COLORS.hpEmpty });
+    blit(sprite, left + n * 6, bottom - 4);
+  }
+}
+
+// Funkelnder Stern an der Spitze einer fliegenden Kurve
+function drawSparkle(i, j, color) {
+  const big = Math.floor(performance.now() / 90) % 2 === 0;
+  const r = big ? 3 : 2;
+  fill(color, i - r, j - 1, 2 * r, 2);
+  fill(color, i - 1, j - r, 2, 2 * r);
+  fill('#ffffff', i - 1, j - 1, 2, 2);
+}
+
+/* ---------- Hintergrund: Raster, Wände, Achsen, alte Spuren ---------- */
 
 // Raster, Wände, Achsen und die Spuren alter Schüsse ändern sich selten – sie werden
 // in ein eigenes Bild vorgezeichnet und nur neu gemalt, wenn sich etwas davon ändert
-// (Position, Wände, Größe, Farbe, Spuren). Die Achsen liegen über den Wänden, damit
-// die Zahlen lesbar bleiben.
+// (Position, Wände, Größe, Farbe, Spuren, Schrift geladen).
 let background = null;   // { canvas, key }
+let fontsReady = false;
 
 function drawTrails() {
   if (state.mode === 'multi') { mpDrawTrails(); return; }
   for (const trail of state.trails) {
-    for (const arm of trail.arms) strokeCurve(arm.drawPoints || arm.points, Infinity, COLORS.trail, 3);
+    for (const arm of trail.arms) stampPath(pixelPath(arm.drawPoints || arm.points), Infinity, COLORS.trail, curveWidth());
   }
 }
 
@@ -2345,29 +2437,26 @@ function drawBackground() {
   const axesColor = state.mode === 'multi' ? mpAxesColor() : COLORS.axes;
   const walls = state.map ? state.map.grid.map(row => row.join('')).join('') : '';
   const trails = state.mode === 'multi' ? mpTrailKey() : state.trails.map(t => t.id).join(',');
-  const key = [canvas.width, canvas.height, state.player.x, state.player.y, axesColor, walls, trails].join('|');
+  const key = [canvas.width, canvas.height, pix.K, pix.T, state.player.x, state.player.y, viewMirror(), axesColor, walls, trails, fontsReady].join('|');
   if (!background || background.key !== key) {
     const layer = background ? background.canvas : document.createElement('canvas');
     layer.width = canvas.width;
     layer.height = canvas.height;
     const main = ctx;
     ctx = layer.getContext('2d');
-    ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
     ctx.imageSmoothingEnabled = false;
     drawGrid();
     drawWalls();
-    drawPlayerAxes(axesColor);
     drawTrails();
+    drawPlayerAxes(axesColor);
     ctx = main;
     background = { canvas: layer, key };
   }
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.drawImage(background.canvas, 0, 0);
-  ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
 }
 
 function draw() {
-  ctx.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.imageSmoothingEnabled = false;
   if (state.mode === 'multi') mpUpdateShots();
   drawBackground();
@@ -2383,253 +2472,384 @@ function draw() {
   drawMouseInfo();
 }
 
+// Rasterlinien bei jeder ganzen Zahl (gepunktet), durchgezogen bei Vielfachen von 5 –
+// gezählt vom Spieler aus, denn er ist der Nullpunkt seines Koordinatensystems
 function drawGrid() {
-  ctx.fillStyle = COLORS.paper;
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-  // Rasterlinien bei jeder ganzen Zahl, kräftiger bei Vielfachen von 5 –
-  // gezählt vom Spieler aus, denn er ist der Ursprung seines Koordinatensystems
-  const P = state.player;
-  ctx.lineWidth = 1;
-  for (let x = VIEW.xMin; x <= VIEW.xMax; x++) {
-    ctx.strokeStyle = (x - P.x) % 5 === 0 ? COLORS.gridStrong : COLORS.grid;
-    line(toCanvasX(x) + 0.5, 0, toCanvasX(x) + 0.5, HEIGHT);
+  const W = COLS * pix.A;
+  const H = ROWS * pix.A;
+  fill(COLORS.paper, 0, 0, W, H);
+  // Pergament-Struktur: einzelne hellere und dunklere Kunst-Pixel, fest verteilt (flackert nicht),
+  // dazu ein Rand, der nach außen dunkler wird
+  for (let j = 0; j < H; j++) {
+    for (let i = 0; i < W; i++) {
+      let h = Math.imul(i, 73856093) ^ Math.imul(j, 19349663);
+      h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+      h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+      const v = ((h ^ (h >>> 16)) >>> 0) % 1000;
+      if (v < 14) fill(COLORS.paperDark, i, j, v < 4 ? 2 : 1, 1);
+      else if (v > 993) fill(COLORS.paperLight, i, j);
+    }
   }
-  for (let y = VIEW.yMin; y <= VIEW.yMax; y++) {
-    ctx.strokeStyle = (y - P.y) % 5 === 0 ? COLORS.gridStrong : COLORS.grid;
-    line(0, toCanvasY(y) + 0.5, WIDTH, toCanvasY(y) + 0.5);
-  }
-}
-
-// Eigenes Koordinatensystem des Spielers: Er ist immer der Ursprung (0 | 0),
-// alle Zahlen an den Achsen zählen von ihm aus. Achsen mit Pfeilspitzen,
-// Striche bei jeder Zahl, Beschriftung bei jeder zweiten. Steht der Spieler
-// nah am Rand, kommen die Zahlen auf die andere Seite der Achse.
-// color: Achsenfarbe (im Multiplayer die Farbe des Spielers)
-function drawPlayerAxes(color = COLORS.axes) {
-  const P = state.player;
-  const ox = toCanvasX(P.x);
-  const oy = toCanvasY(P.y);
-  const labelsBelow = oy < HEIGHT - 40;   // Zahlen der x-Achse unter der Achse …
-  const labelsLeft = ox > 40;             // … und die der y-Achse links davon
-  ctx.save();
-  ctx.strokeStyle = color;
-  ctx.fillStyle = color;
-  ctx.lineWidth = 3;
-  line(0, oy, WIDTH - 4, oy);
-  line(ox, HEIGHT, ox, 4);
-  triangle(WIDTH, oy, WIDTH - 14, oy - 7, WIDTH - 14, oy + 7);
-  triangle(ox, 0, ox - 7, 14, ox + 7, 14);
-
-  // Zahlen mit hellem Rand, damit sie auch auf Kurven lesbar bleiben
-  ctx.font = '700 15px ui-monospace, Consolas, monospace';
-  ctx.lineWidth = 5;
-  ctx.strokeStyle = COLORS.paper;
-  ctx.fillStyle = COLORS.label;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = labelsBelow ? 'top' : 'bottom';
-  for (let x = VIEW.xMin + 1; x < VIEW.xMax; x++) {
-    const n = x - P.x;
-    if (n === 0) continue;
-    ctx.fillRect(toCanvasX(x) - 1, oy - 4, 2, 8);
-    if (n % 2 === 0) label(String(n), toCanvasX(x), labelsBelow ? oy + 8 : oy - 8);
-  }
-  ctx.textAlign = labelsLeft ? 'right' : 'left';
-  ctx.textBaseline = 'middle';
-  for (let y = VIEW.yMin + 1; y < VIEW.yMax; y++) {
-    const n = y - P.y;
-    if (n === 0) continue;
-    ctx.fillRect(ox - 4, toCanvasY(y) - 1, 8, 2);
-    if (n % 2 === 0) label(String(n), labelsLeft ? ox - 9 : ox + 9, toCanvasY(y));
-  }
-
-  // Achsennamen
-  ctx.font = '16px "Press Start 2P", monospace';
-  ctx.fillStyle = color;
-  ctx.textBaseline = labelsBelow ? 'top' : 'bottom';
-  ctx.textAlign = 'right';
-  label('x', WIDTH - 10, labelsBelow ? oy + 14 : oy - 14);
-  ctx.textBaseline = 'top';
-  ctx.textAlign = labelsLeft ? 'left' : 'right';
-  label('y', labelsLeft ? ox + 14 : ox - 14, 8);
-  ctx.restore();
-}
-
-function drawWalls() {
-  const sprite = spriteFromRows('wall', WALL_SPRITE, {
-    h: COLORS.wall.light, b: COLORS.wall.base, m: COLORS.wall.mortar, d: COLORS.wall.dark,
+  COLORS.paperEdge.forEach((color, k) => {
+    fill(color, k, k, W - 2 * k, 1);
+    fill(color, k, H - 1 - k, W - 2 * k, 1);
+    fill(color, k, k, 1, H - 2 * k);
+    fill(color, W - 1 - k, k, 1, H - 2 * k);
   });
-  state.map.grid.forEach((row, r) => row.forEach((value, c) => {
+  for (let x = VIEW.xMin + 1; x < VIEW.xMax; x++) {
+    const i = Math.round(artX(x));
+    if (viewX(x) % 5 === 0) fill(COLORS.gridStrong, i, 0, 1, H);
+    else for (let j = 1; j < H; j += 2) fill(COLORS.grid, i, j);
+  }
+  for (let y = VIEW.yMin + 1; y < VIEW.yMax; y++) {
+    const j = Math.round(artY(y));
+    if (viewY(y) % 5 === 0) fill(COLORS.gridStrong, 0, j, W, 1);
+    else for (let i = 1; i < W; i += 2) fill(COLORS.grid, i, j);
+  }
+}
+
+// Wände als Burgmauer: zwei Steinreihen pro Kästchen im Verband, Umriss nur an freien Seiten
+// (so verschmelzen benachbarte Wände zu einer Mauer), hier und da etwas Moos oben drauf.
+function drawWalls() {
+  const grid = state.map.grid;
+  const A = pix.A;
+  const W = COLORS.wall;
+  const h1 = Math.floor(A / 2);
+  const m = viewMirror();
+  const wallAt = (c, r) => r >= 0 && r < ROWS && c >= 0 && c < COLS && grid[r][c] === CELL.WALL;
+  grid.forEach((row, r) => row.forEach((value, c) => {
     if (value !== CELL.WALL) return;
-    const corner = crossPoint(c, r);
-    ctx.drawImage(sprite, toCanvasX(corner.x), toCanvasY(corner.y), UNIT, UNIT);
+    const i0 = Math.round(Math.min(artX(VIEW.xMin + c), artX(VIEW.xMin + c + 1)));   // gespiegelt ist die rechte Ecke links
+    const j0 = r * A;
+    fill(W.base, i0, j0, A, A);
+    fill(W.light, i0, j0, A, 1);
+    fill(W.light, i0, j0 + h1, A, 1);
+    fill(W.mortar, i0, j0 + h1 - 1, A, 1);
+    fill(W.mortar, i0, j0 + A - 1, A, 1);
+    fill(W.mortar, i0 + h1 - 1, j0, 1, h1);
+    fill(W.mortar, i0 + A - 1, j0 + h1, 1, A - h1);
+    if (!wallAt(c, r - 1)) fill(W.dark, i0, j0, A, 1);
+    if (!wallAt(c, r + 1)) fill(W.dark, i0, j0 + A - 1, A, 1);
+    if (!wallAt(c - m, r)) fill(W.dark, i0, j0, 1, A);
+    if (!wallAt(c + m, r)) fill(W.dark, i0 + A - 1, j0, 1, A);
+    const hash = (c * 7 + r * 13) % 11;
+    if (!wallAt(c, r - 1) && hash < 4 && A >= 6) {
+      const x = i0 + 1 + (hash * 3) % (A - 4);
+      fill(W.moss, x, j0, 3, 1);
+      fill(W.moss, x + 1, j0 - 1, 1, 1);
+    }
   }));
 }
 
-function line(x1, y1, x2, y2) {
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.stroke();
-}
+// Eigenes Koordinatensystem des Spielers: Der Nullpunkt (0 | 0) liegt in ihm, alle
+// Zahlen an den Achsen zählen von ihm aus; x wächst nach rechts (steht er in der Welt
+// rechts, ist die Ansicht gespiegelt). Ein allgemeines Koordinatensystem gibt es nicht.
+// Achsen 1 Kunst-Pixel breit (mittig auf der Linie), Pfeilspitzen, Striche bei jeder Zahl,
+// Beschriftung bei jeder zweiten. Steht der Spieler nah am Rand, kommen die Zahlen auf die
+// andere Seite der Achse.
+// color: Achsenfarbe (im Multiplayer die Farbe des Spielers)
+function drawPlayerAxes(color = COLORS.axes) {
+  const { A, K, T, S } = pix;
+  const W = COLS * A;
+  const H = ROWS * A;
+  const oi = Math.round(artX(state.player.x));
+  const oj = Math.round(artY(state.player.y));
+  const labelsBelow = oj < H - 2 * A;   // Zahlen der x-Achse unter der Achse …
+  const labelsLeft = oi > 2 * A;        // … und die der y-Achse links davon
+  // Beschriftet wird jede 2. Zahl – ist das Feld klein, nur jede 4., 5. oder 10., damit nichts aneinanderstößt
+  const steps = [2, 4, 5, 10];
+  const stepX = steps.find(st => st * pix.U >= textWidth('-30') + 6 * S) || 10;
+  const stepY = steps.find(st => st * pix.U >= 16 * S) || 10;
 
-function triangle(x1, y1, x2, y2, x3, y3) {
-  ctx.beginPath();
-  ctx.moveTo(x1, y1);
-  ctx.lineTo(x2, y2);
-  ctx.lineTo(x3, y3);
-  ctx.fill();
-}
-
-function label(text, x, y) {
-  ctx.strokeText(text, x, y);
-  ctx.fillText(text, x, y);
-}
-
-// Zeichnet einen Arm bis zur Kurvenlänge maxS; bei null wird abgesetzt (Lücke).
-// Gibt den letzten gezeichneten Punkt zurück (für die Schuss-Spitze).
-function strokeCurve(points, maxS, color, width) {
-  ctx.beginPath();
-  let penDown = false;
-  let tip = null;
-  for (const p of points) {
-    if (p === null) { penDown = false; continue; }
-    if (p.s > maxS) break;
-    const X = toCanvasX(p.x);
-    const Y = toCanvasY(p.y);
-    if (penDown) ctx.lineTo(X, Y);
-    else { ctx.moveTo(X, Y); penDown = true; }
-    tip = p;
+  // in Bildschirmpixeln gezeichnet, damit die dünne Linie genau mittig auf dem Nullpunkt liegt
+  const c = Math.floor(K / 2);
+  const ox = oi * K;
+  const oy = oj * K;
+  ctx.fillStyle = color;
+  ctx.fillRect(0, oy - c, (W - 1) * K, K);
+  ctx.fillRect(ox - c, K, K, (H - 1) * K);
+  for (let s = 0; s <= 3; s++) {
+    ctx.fillRect((W - 1 - s) * K, oy - c - s * K, K, (2 * s + 1) * K);
+    ctx.fillRect(ox - c - s * K, s * K, (2 * s + 1) * K, K);
   }
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.stroke();
+
+  for (let x = VIEW.xMin + 1; x < VIEW.xMax; x++) {
+    const n = viewX(x);
+    if (n === 0) continue;
+    const i = Math.round(artX(x));
+    ctx.fillStyle = color;
+    ctx.fillRect(i * K - c, oy - c - 2 * K, K, 5 * K);
+    if (n % stepX !== 0 || i > W - 6) continue;
+    const y = labelsBelow ? (oj + 4) * K + 11 * S : (oj - 4) * K - 2 * S;
+    pixelText(String(n), i * K, y, COLORS.label, { align: 'center', outline: COLORS.paper });
+  }
+  for (let y = VIEW.yMin + 1; y < VIEW.yMax; y++) {
+    const n = viewY(y);
+    if (n === 0) continue;
+    const j = Math.round(artY(y));
+    ctx.fillStyle = color;
+    ctx.fillRect(ox - c - 2 * K, j * K - c, 5 * K, K);
+    if (n % stepY !== 0 || j < 6) continue;
+    const x = labelsLeft ? (oi - 4) * K - T : (oi + 4) * K + T;
+    pixelText(String(n), x, j * K + 5 * S, COLORS.label, { align: labelsLeft ? 'right' : 'left', outline: COLORS.paper });
+  }
+
+  // Achsennamen
+  pixelText('x', (W - 5) * K, labelsBelow ? (oj + 4) * K + 13 * S + 12 * T : (oj - 4) * K - 3 * S, color,
+    { align: 'right', outline: COLORS.paper, scale: 2 * T });
+  pixelText('y', labelsLeft ? (oi + 4) * K : (oi - 4) * K, 5 * K + 16 * T, color,
+    { align: labelsLeft ? 'left' : 'right', outline: COLORS.paper, scale: 2 * T });
+}
+
+/* ---------- Kurven als Pixel-Linie ---------- */
+
+// Kurven werden in voller Bildschirmauflösung gezeichnet (nicht in Kunst-Pixeln): Kurvenpunkte →
+// Bildschirmpixel der Mittellinie, lückenlos verbunden (Bresenham), danach mit einem runden,
+// hartkantigen Pinsel gestempelt – glatt, aber ohne Kantenglättung, also trotzdem scharf.
+// Ergebnis: flaches Array [x, y, s, x, y, s, …] mit s = Kurvenlänge bis dorthin (für die Animation).
+// Wird pro Punktliste und Ansicht nur einmal berechnet.
+const pathCache = new WeakMap();
+
+function pixelPath(points) {
+  const key = pix.U + '|' + viewMirror();
+  const cached = pathCache.get(points);
+  if (cached && cached.key === key) return cached.cells;
+  const cells = [];
+  const far = 4 * COLS * pix.U;
+  let pi = null;
+  let pj = null;
+  for (const p of points) {
+    if (p === null) { pi = null; continue; }
+    const i = Math.round(artX(p.x) * pix.K);
+    const j = Math.round(artY(p.y) * pix.K);
+    if (pi === null || Math.abs(i - pi) + Math.abs(j - pj) > far) {
+      cells.push(i, j, p.s);
+    } else if (i !== pi || j !== pj) {
+      // Bresenham von (pi, pj) nach (i, j), ohne den Startpunkt
+      const di = Math.abs(i - pi), dj = -Math.abs(j - pj);
+      const si = pi < i ? 1 : -1, sj = pj < j ? 1 : -1;
+      let err = di + dj, x = pi, y = pj;
+      while (x !== i || y !== j) {
+        const e2 = 2 * err;
+        if (e2 >= dj) { err += dj; x += si; }
+        if (e2 <= di) { err += di; y += sj; }
+        cells.push(x, y, p.s);
+      }
+    }
+    pi = i;
+    pj = j;
+  }
+  pathCache.set(points, { key, cells });
+  return cells;
+}
+
+// Runder Pinsel mit size Bildschirmpixeln Durchmesser, harte Kante
+function brushSprite(size, color) {
+  const key = `brush|${size}|${color}`;
+  if (spriteCache.has(key)) return spriteCache.get(key);
+  const sprite = document.createElement('canvas');
+  sprite.width = sprite.height = size;
+  const g = sprite.getContext('2d');
+  g.fillStyle = color;
+  const r = size / 2;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if ((x + 0.5 - r) ** 2 + (y + 0.5 - r) ** 2 <= r * r + 0.5) g.fillRect(x, y, 1, 1);
+    }
+  }
+  spriteCache.set(key, sprite);
+  return sprite;
+}
+
+// Linienstärken der Kurve in Bildschirmpixeln: der Kern so breit wie die Trefferbreite (LINE_WIDTH),
+// dazu ein heller Rand für den fliegenden Schuss
+function curveWidth() { return Math.max(3, Math.round(LINE_WIDTH * pix.U)); }
+function haloWidth() { return curveWidth() + 2 * Math.max(2, Math.round(pix.U / 14)); }
+
+// Stempelt einen Pfad bis zur Kurvenlänge maxS mit dem runden Pinsel (size Bildschirmpixel,
+// mittig auf der Linie). dash: Strichmuster in Kunst-Pixeln, z. B. [4, 2]. Gibt die Spitze zurück.
+function stampPath(cells, maxS, color, size, dash = null) {
+  const brush = brushSprite(size, color);
+  const off = Math.floor(size / 2);
+  const stride = Math.max(1, Math.floor(size / 3));   // dicke Pinsel überlappen – nicht jeder Pixel nötig
+  const pattern = dash ? dash.map(d => d * pix.K) : null;
+  const period = pattern ? pattern.reduce((a, b) => a + b, 0) : 0;
+  let tip = null;
+  for (let c = 0, n = 0; c < cells.length; c += 3, n++) {
+    if (cells[c + 2] > maxS) break;
+    tip = { x: cells[c], y: cells[c + 1] };
+    if (pattern ? !dashOn(pattern, n % period) : n % stride !== 0) continue;
+    ctx.drawImage(brush, tip.x - off, tip.y - off);
+  }
+  if (tip && !pattern) ctx.drawImage(brush, tip.x - off, tip.y - off);
   return tip;
+}
+
+function dashOn(dash, pos) {
+  for (let k = 0; k < dash.length; k++) {
+    if (pos < dash[k]) return k % 2 === 0;
+    pos -= dash[k];
+  }
+  return true;
 }
 
 function drawShot() {
   const shot = state.shot;
   if (!shot) return;
-
   for (const arm of shot.arms) {
-    strokeCurve(arm.drawPoints, shot.progress, COLORS.curveHalo, LINE_WIDTH * UNIT + 5);
-    const tip = strokeCurve(arm.drawPoints, shot.progress, COLORS.curve, LINE_WIDTH * UNIT);
-
-    // leuchtende Spitze, solange der Arm noch wächst
-    if (tip && shot.progress < arm.length) {
-      const X = Math.round(toCanvasX(tip.x));
-      const Y = Math.round(toCanvasY(tip.y));
-      ctx.fillStyle = COLORS.curve;
-      ctx.fillRect(X - 7, Y - 7, 14, 14);
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(X - 3, Y - 3, 6, 6);
-    }
+    const cells = pixelPath(arm.drawPoints);
+    stampPath(cells, shot.progress, COLORS.curveHalo, haloWidth());
+    const tip = stampPath(cells, shot.progress, COLORS.curve, curveWidth());
+    if (tip && shot.progress < arm.length) drawSparkle(Math.round(tip.x / pix.K), Math.round(tip.y / pix.K), COLORS.curve);
   }
+}
+
+/* ---------- Gegner, Spieler, Funken ---------- */
+
+function enemyColors(enemy) {
+  return COLORS.enemy[Math.min(enemy.maxHp, 3)];
 }
 
 function drawEnemies() {
   for (const e of state.enemies) {
     if (e.hp <= 0) continue;
-    const colors = enemyColors(e);
-    const cells = Math.max(3, Math.round(e.r * UNIT / PIXEL));
-    const sprite = enemySprite(cells, colors, e.flash > 0.5);
-    const shake = e.flash > 0 ? Math.round(Math.sin(e.flash * 40) * 4 * e.flash) : 0;
-    const cx = toCanvasX(e.x) + shake;
-    const cy = toCanvasY(e.y);
-    const half = cells * PIXEL;
-    ctx.drawImage(sprite, cx - half, cy - half, half * 2, half * 2);
-
-    // Lebenspunkte als Kästchen über dem Gegner
-    const box = 9, gap = 3;
-    const total = e.maxHp * box + (e.maxHp - 1) * gap;
-    for (let i = 0; i < e.maxHp; i++) {
-      const x = Math.round(cx - total / 2 + i * (box + gap));
-      const y = Math.round(cy - half - box - 4);
-      ctx.fillStyle = COLORS.ink;
-      ctx.fillRect(x, y, box, box);
-      ctx.fillStyle = i < e.hp ? COLORS.hpFull : COLORS.hpEmpty;
-      ctx.fillRect(x + 2, y + 2, box - 4, box - 4);
+    const R = Math.max(2, Math.round(e.r * pix.A));
+    const sprite = slimeSprite(R, e.maxHp, enemyColors(e), e.flash > 0.5);
+    const shake = e.flash > 0 ? Math.round(Math.sin(e.flash * 40) * 1.5 * e.flash) : 0;
+    const ci = Math.round(artX(e.x)) + shake;
+    const cj = Math.round(artY(e.y));
+    blit(sprite, ci - R, cj - R);
+    let top = cj - R;
+    if (e.maxHp >= 3) {
+      blit(spriteFromRows('crown', CROWN_SPRITE, { g: COLORS.gold, G: COLORS.goldDark, r: COLORS.hpFull }), ci - 4, top - 3);
+      top -= 3;
     }
+    drawHearts(ci, top - 1, e.hp, e.maxHp);
   }
 }
 
 function drawPlayer() {
-  const sprite = spriteFromRows('player', PLAYER_SPRITE, { '#': COLORS.player, 'o': '#ffffff', 'd': COLORS.playerDark });
-  const size = 4;
-  const w = sprite.width * size;
-  const h = sprite.height * size;
-  const X = Math.round(toCanvasX(state.player.x));
-  const Y = Math.round(toCanvasY(state.player.y));
-  ctx.drawImage(sprite, X - w / 2, Y - h / 2, w, h);
-
-  // Richtung, in die der letzte/aktuelle Angriff aus dem Spieler herausging
+  const oi = Math.round(artX(state.player.x));
+  const oj = Math.round(artY(state.player.y));
+  // Richtung, in die der letzte/aktuelle Angriff aus dem Spieler herausging – dorthin schaut der Zauberer
   const shot = state.shot || state.trails[state.trails.length - 1];
-  const S = shot && exitDirection(shot.arms);
-  const P = state.player;
-  const upward = S && S.y - P.y > Math.abs(S.x - P.x);   // Strahl geht nach oben -> Schild nach unten
-
-  // Kleines Kreuz genau auf dem Nullpunkt des Spielers
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(X - 1, Y - 5, 2, 10);
-  ctx.fillRect(X - 5, Y - 1, 10, 2);
-
-  // Schild „DU“ über dem Spieler (unter ihm, wenn der Angriff nach oben herausgeht)
-  ctx.font = '11px "Press Start 2P", monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = upward ? 'top' : 'bottom';
-  ctx.lineWidth = 4;
-  ctx.strokeStyle = COLORS.paper;
-  ctx.fillStyle = COLORS.player;
-  const name = ui.playerName.value.trim();
-  label(name ? `DU · ${name}` : 'DU', X, upward ? Y + h / 2 + 4 : Y - h / 2 - 4);
+  const face = shot && shot.arms[0] && shot.arms[0].dir < 0 ? -1 : 1;
+  drawWizard(oi, oj, COLORS.player, COLORS.playerDark, COLORS.curve, face);
 }
 
-// Erster Punkt eines Arms, der mindestens 0,3 vom Spieler weg ist (Richtung des Austritts)
-function exitDirection(arms) {
-  const P = state.player;
-  for (const arm of arms) {
-    const q = arm.points.find(p => p !== null && Math.hypot(p.x - P.x, p.y - P.y) >= 0.3);
-    if (q) return q;
-  }
-  return null;
-}
-
+// Funken als Kunst-Pixel (Position in logischen Canvas-Pixeln, siehe spawnParticles)
 function drawParticles() {
   for (const p of state.particles) {
-    ctx.globalAlpha = Math.min(1, p.life * 2);
-    ctx.fillStyle = p.color;
-    ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+    ctx.globalAlpha = p.life > 0.25 ? 1 : 0.5;
+    const s = p.size >= 6 ? 2 : 1;
+    fill(p.color, Math.round(logToArt(p.x)), Math.round(logToArt(p.y)), s, s);
   }
   ctx.globalAlpha = 1;
 }
 
-// Koordinaten unter der Maus – im Koordinatensystem des Spielers
+/* ---------- Maus-Anzeige ---------- */
+
+// Ort eines Welt-Punktes im Koordinatensystem des Spielers, z. B. „(4,5 | 1,5)“
+function placeText(x, y, digits = 2) {
+  return `(${formatNumber(viewX(x), digits)} | ${formatNumber(viewY(y), digits)})`;
+}
+
+// Position der Maus – im eigenen Koordinatensystem des Spielers (Nullpunkt im Spieler)
 function drawMouseInfo() {
   const m = state.mouse;
   if (!m) return;
-  const rel = (x, y, digits) => `${formatNumber(x - state.player.x, digits)} | ${formatNumber(y - state.player.y, digits)}`;
-  let text = `x = ${formatNumber(m.x - state.player.x, 1)}   y = ${formatNumber(m.y - state.player.y, 1)}   (dein Koordinatensystem)`;
+  // über einem Gegner (oder Spieler im Multiplayer) dessen genaue Lage, sonst die der Maus
   const enemy = aliveEnemies().find(e => Math.hypot(e.x - m.x, e.y - m.y) <= e.r);
-  const playerText = state.mode === 'multi' ? mpHoverText(m) : null;
-  if (playerText) {
-    text = playerText;
-  } else if (enemy) {
-    text = `Gegner bei (${rel(enemy.x, enemy.y, 2)})  ·  LP ${enemy.hp}/${enemy.maxHp}`;
-  } else if (isWall(state.map.grid, m.x, m.y)) {
-    text = wallsBreakable() ? 'Wand – hier stoppt die Kurve und sprengt ein Loch' : 'Wand (unzerstörbar) – hier stoppt die Kurve';
-  }
-  ctx.font = '600 15px ui-monospace, Consolas, monospace';
-  const w = ctx.measureText(text).width + 20;
-  ctx.fillStyle = COLORS.ink;
-  ctx.fillRect(WIDTH - w - 14, 12, w + 4, 34);
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(WIDTH - w - 16, 10, w, 30);
-  ctx.fillStyle = COLORS.ink;
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, WIDTH - w - 6, 26);
+  const text = (state.mode === 'multi' ? mpHoverText(m) : null) ||
+    (enemy ? placeText(enemy.x, enemy.y) : `(${formatNumber(viewX(m.x), 1)} | ${formatNumber(viewY(m.y), 1)})`);
+  const T = pix.T;
+  const S = pix.S;
+  const w = textWidth(text) + 16 * S;
+  const h = 18 * S;
+  const x = canvas.width - w - 10 * T;
+  const y = 10 * T;
+  pixelPanel(x, y, w, h, COLORS.parchment);
+  pixelText(text, x + 8 * S, y + 14 * S, COLORS.ink);
+}
+
+/* ---------- Pixel-Icons für die Oberfläche ----------
+   Kleine Raster ('#' = Pixel), daraus wird ein SVG gebaut, das die Textfarbe
+   übernimmt. Größe immer ein Vielfaches von --p (siehe style.css) → scharf. */
+
+const ICONS = {
+  user: ['...####...', '..######..', '..######..', '..######..', '...####...', '..........', '..######..', '.########.', '##########', '##########'],
+  gear: ['....##....', '.#.####.#.', '..######..', '.###..###.', '####..####', '####..####', '.###..###.', '..######..', '.#.####.#.', '....##....'],
+  dice: ['.########.', '##########', '##.####.##', '##########', '####..####', '####..####', '##########', '##.####.##', '##########', '.########.'],
+  restart: ['...####.#.', '.##....###', '.#....####', '##........', '#.........', '#........#', '##......##', '.##....##.', '...####...', '..........'],
+  play: ['..#.......', '..##......', '..###.....', '..####....', '..#####...', '..#####...', '..####....', '..###.....', '..##......', '..#.......'],
+  chart: ['#.........', '#.......##', '#......#..', '#.....#...', '#....#....', '#..##.....', '#.#.......', '##........', '##########', '..........'],
+  keyboard: ['..........', '##########', '#.#.#.#.##', '##########', '##.#.#.#.#', '##########', '#.######.#', '##########', '..........', '..........'],
+  help: ['..####....', '.##..##...', '.##..##...', '.....##...', '....##....', '...##.....', '...##.....', '..........', '...##.....', '...##.....'],
+  flag: ['##........', '########..', '#########.', '########..', '#######...', '########..', '##........', '##........', '##........', '##........'],
+  infinity: ['..........', '..........', '.###..###.', '##.####.##', '#...##...#', '##.####.##', '.###..###.', '..........', '..........', '..........'],
+  target: ['...####...', '.##....##.', '.#..##..#.', '#..#..#..#', '#.#.##.#.#', '#.#.##.#.#', '#..#..#..#', '.#..##..#.', '.##....##.', '...####...'],
+  swords: ['#........#', '##......##', '.##....##.', '..##..##..', '...####...', '...####...', '.#.#..#.#.', '..#....#..', '.#.#..#.#.', '#........#'],
+  info: ['....##....', '....##....', '..........', '...###....', '....##....', '....##....', '....##....', '....##....', '...####...', '..........'],
+  wall: ['##########', '####.#####', '####.#####', '..........', '#.#####.##', '#.#####.##', '..........', '####.#####', '####.#####', '##########'],
+  calendar: ['.#....#...', '##########', '##########', '#........#', '#.##.##.##', '#........#', '#.##.##.##', '#........#', '##########', '..........'],
+  key: ['..........', '.###......', '#...#.....', '#...######', '#...#.#.#.', '.###..#.#.', '..........', '..........', '..........', '..........'],
+  pencil: ['.......##.', '......####', '.....####.', '....####..', '...####...', '..####....', '.####.....', '.###......', '##........', '#.........'],
+  close: ['##......##', '###....###', '.###..###.', '..######..', '...####...', '...####...', '..######..', '.###..###.', '###....###', '##......##'],
+  check: ['..........', '.........#', '........##', '.......##.', '#.....##..', '##...##...', '.##.##....', '..###.....', '...#......', '..........'],
+  trophy: ['#.######.#', '#.######.#', '.########.', '..######..', '...####...', '....##....', '....##....', '...####...', '..######..', '..######..'],
+  heart: ['.##...##.', '####.####', '#########', '#########', '.#######.', '..#####..', '...###...', '....#....'],
+  shield: ['##########', '##########', '##########', '##########', '.########.', '.########.', '..######..', '...####...', '....##....'],
+  warning: ['....##....', '...####...', '...####...', '..##..##..', '..##..##..', '.###..###.', '.########.', '####..####', '##########', '..........'],
+  crest: ['##########', '#.##..##.#', '#.##..##.#', '##########', '##########', '.########.', '.###..###.', '..##..##..', '...####...', '....##....'],
+  slime: ['..........', '...####...', '.########.', '.##.##.##.', '##########', '##########', '##########', '.########.', '..........', '..........'],
+  eraser: ['..........', '.....###..', '....#####.', '...#######', '..#.#####.', '.#...###..', '#.....#...', '.#...#....', '..###.....', '..........'],
+  bolt: ['.....###..', '....###...', '...###....', '..###.....', '.#######..', '....###...', '...###....', '..###.....', '.##.......', '#.........'],
+  lock: ['..........', '...####...', '..#....#..', '..#....#..', '.########.', '.###..###.', '.###..###.', '.####.###.', '.########.', '..........'],
+  copy: ['######....', '#....#....', '#..######.', '#..#....#.', '#..#....#.', '####....#.', '...#....#.', '...#....#.', '...######.', '..........'],
+  insert: ['....##....', '....##....', '....##....', '..######..', '...####...', '....##....', '#........#', '#........#', '##########', '..........'],
+  scroll: ['.########.', '#.#......#', '##.......#', '..#.####.#', '..#......#', '..#.####.#', '..#......#', '..#.###..#', '..#......#', '..########'],
+  // Spieler-Symbole im Multiplayer (zusätzlich zur Farbe)
+  circle: ['..###..', '.#####.', '#######', '#######', '#######', '.#####.', '..###..'],
+  triangle: ['...#...', '...#...', '..###..', '..###..', '.#####.', '.#####.', '#######'],
+  square: ['#######', '#######', '#######', '#######', '#######', '#######', '#######'],
+  diamond: ['...#...', '..###..', '.#####.', '#######', '.#####.', '..###..', '...#...'],
+};
+
+const iconPaths = {};
+
+// SVG-Pfad aus einem Raster: jede waagerechte Reihe von '#' wird ein Rechteck
+function iconPath(name) {
+  if (iconPaths[name]) return iconPaths[name];
+  let d = '';
+  ICONS[name].forEach((row, y) => row.replace(/#+/g, (run, x) => { d += `M${x} ${y}h${run.length}v1h-${run.length}z`; return run; }));
+  return (iconPaths[name] = d);
+}
+
+// Icon als SVG-Text (für innerHTML); cls: zusätzliche Klasse, z. B. 'empty'
+function icon(name, cls = '') {
+  const rows = ICONS[name];
+  const w = rows[0].length;
+  const h = rows.length;
+  return `<svg class="ico ${cls}" style="--w:${w};--h:${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><path d="${iconPath(name)}"/></svg>`;
+}
+
+// Icon als Element (für replaceChildren / append)
+function iconNode(name, cls = '') {
+  const t = document.createElement('template');
+  t.innerHTML = icon(name, cls);
+  return t.content.firstChild;
+}
+
+// Ersetzt alle <i data-icon="…"> im Dokument (bzw. in root) durch das Icon
+function hydrateIcons(root = document) {
+  root.querySelectorAll('i[data-icon]').forEach(el => el.replaceWith(iconNode(el.dataset.icon)));
+}
+
+// Icon-Raster als Kunst-Pixel aufs Spielfeld (z. B. Power-ups), mittig um (ci, cj)
+function drawIcon(name, ci, cj, color) {
+  const rows = ICONS[name];
+  const sprite = spriteFromRows('icon|' + name + '|' + color, rows, { '#': color });
+  blit(sprite, ci - Math.floor(sprite.width / 2), cj - Math.floor(sprite.height / 2));
 }
 
 /* ==========================================================
@@ -2653,28 +2873,26 @@ function updateHUD() {
   if (state.mode === 'multi') { mpUpdateHUD(); return; }
   ui.fireBar.classList.remove('my-turn');
   const limited = limitedShots();
-  ui.enemyCount.textContent = state.mode === 'endless' || state.mode === 'sandbox' ? aliveEnemies().length : `${aliveEnemies().length} / ${state.enemies.length}`;
+  const alive = aliveEnemies().length;
+  ui.enemyCount.textContent = state.mode === 'endless' || state.mode === 'sandbox' ? alive : `${alive} / ${state.enemies.length}`;
   ui.scoreItem.hidden = state.mode !== 'endless';
+  ui.shotItem.hidden = !limited && state.mode !== 'endless';
 
   let pips = 0, filled = 0;
   if (limited) {
-    ui.shotLabel.textContent = 'Angriffe';
+    ui.shotItem.title = 'Angriffe';
     ui.shotCount.textContent = `${state.shotsLeft} / ${state.map.shots}`;
-    ui.shotSub.textContent = '';
     pips = state.map.shots;
     filled = state.shotsLeft;
-  } else {
-    ui.shotLabel.textContent = 'Schüsse';
-    ui.shotCount.textContent = state.shotsFired;
-    ui.shotSub.textContent = 'unbegrenzt';
   }
   if (state.mode === 'endless') {
     const untilMove = ENDLESS_MOVE_EVERY - (state.shotsFired % ENDLESS_MOVE_EVERY);
-    ui.shotSub.textContent = `Umzug in ${untilMove}`;
+    ui.shotItem.title = `Umzug in ${untilMove}`;
+    ui.shotCount.textContent = state.shotsFired;
     pips = ENDLESS_MOVE_EVERY;
     filled = untilMove;
     ui.score.textContent = state.score;
-    ui.bestCombo.textContent = `Beste Kombo: ${state.bestCombo}`;
+    ui.bestCombo.textContent = `×${state.bestCombo}`;
   }
   ui.shotPips.replaceChildren(...Array.from({ length: pips }, (_, i) => {
     const pip = document.createElement('span');
@@ -2690,23 +2908,24 @@ function buildLevelSelect() {
     const btn = document.createElement('button');
     btn.className = 'tab' + (current ? ' current' : '');
     btn.title = title;
-    const span = document.createElement('span');
-    span.className = 'sym';
-    span.textContent = symbol;
-    btn.append(span, ' ', label);
+    const text = document.createElement('span');
+    text.className = 'tab-label';
+    text.textContent = label;
+    btn.append(iconNode(symbol), text);
     btn.addEventListener('click', onClick);
     return btn;
   };
   const levelLabel = state.mode === 'levels' ? (state.daily ? 'TAGES-LEVEL' : `LEVEL ${state.levelIndex + 1}`)
     : state.mode === 'editor' || state.mode === 'custom' ? 'EDITOR' : 'LEVEL';
   ui.levelSelect.replaceChildren(
-    tab('TUTORIAL', '?', state.mode === 'tutorial', 'Spielerklärung Schritt für Schritt', () => switchMode(() => startTutorial(0))),
-    tab(levelLabel, '▦', ['levels', 'editor', 'custom'].includes(state.mode), 'Level, Tages-Herausforderung, Editor, Karten-Code', openLevelDialog),
-    tab('ENDLOS', '∞', state.mode === 'endless', 'Unbegrenzt spielen, Gegner tauchen immer wieder auf', () => switchMode(startEndless)),
-    tab('SANDKASTEN', '□', state.mode === 'sandbox', 'Funktionen frei ausprobieren', () => switchMode(startSandbox)),
-    tab('MULTIPLAYER', '👥', state.mode === 'multi', 'Live mit anderen spielen (Lobby mit Code)', mpOpenDialog),
-    tab('INFO', 'ⓘ', false, 'So gibst du Funktionen ein', () => ui.infoDialog.showModal()),
+    tab('TUTORIAL', 'help', state.mode === 'tutorial', 'Spielerklärung Schritt für Schritt', () => switchMode(() => startTutorial(0))),
+    tab(levelLabel, 'flag', ['levels', 'editor', 'custom'].includes(state.mode), 'Level, Tages-Herausforderung, Editor, Karten-Code', openLevelDialog),
+    tab('ENDLOS', 'infinity', state.mode === 'endless', 'Unbegrenzt spielen, Gegner tauchen immer wieder auf', () => switchMode(startEndless)),
+    tab('SANDKASTEN', 'target', state.mode === 'sandbox', 'Funktionen frei ausprobieren', () => switchMode(startSandbox)),
+    tab('MULTIPLAYER', 'swords', state.mode === 'multi', 'Live mit anderen spielen (Lobby mit Code)', mpOpenDialog),
+    tab('INFO', 'info', false, 'So gibst du Funktionen ein', () => ui.infoDialog.showModal()),
   );
+  fitCanvas();   // die Reiter können breiter geworden sein (Kopfzeile kompakt?)
 }
 
 // Fenster mit allen Leveln (erledigte grün, gesperrte grau)
@@ -2720,7 +2939,8 @@ function openLevelDialog() {
     const num = document.createElement('b');
     num.textContent = i + 1;
     const name = document.createElement('span');
-    name.textContent = i <= state.unlocked ? level.name : 'gesperrt';
+    if (i <= state.unlocked) name.textContent = level.name;
+    else name.append(iconNode('lock'));
     btn.append(num, name);
     btn.addEventListener('click', () => {
       ui.levelDialog.close();
@@ -2729,7 +2949,7 @@ function openLevelDialog() {
     return btn;
   }));
   const best = loadValue(STORAGE_KEY + '.daily.' + todayString(), null);
-  ui.dailyBest.textContent = best === null ? '' : `Dein Bestwert heute: ${best} Angriffe`;
+  ui.dailyBest.replaceChildren(...(best === null ? [] : [iconNode('bolt'), ` ${best}`]));
   ui.codeError.textContent = '';
   ui.levelDialog.showModal();
 }
@@ -2741,26 +2961,22 @@ function showOverlay(kind) {
   ui.overlayRetry.hidden = ui.overlayNewmap.hidden = false;
   ui.overlayLobby.hidden = true;
 
-  ui.overlayNext.textContent = 'Weiter ▶';
+  ui.overlayNext.innerHTML = 'Weiter ' + icon('play');
   ui.overlayNewmap.hidden = state.mode === 'custom';
   if (kind === 'won') {
     const used = state.map.shots - state.shotsLeft;
-    ui.overlayTitle.textContent = state.mode === 'custom' ? 'KARTE GESCHAFFT!' : state.daily ? 'TAGES-HERAUSFORDERUNG GESCHAFFT!'
-      : isLast ? 'ALLE LEVEL GESCHAFFT!' : 'LEVEL GESCHAFFT!';
-    ui.overlayText.textContent = `Alle Gegner besiegt – mit ${used} von ${state.map.shots} Angriffen.` +
-      (state.daily ? ` Dein Bestwert heute: ${loadValue(STORAGE_KEY + '.daily.' + state.daily, used)} Angriffe.` : '') +
-      (state.mode === 'levels' && !state.daily && isLast ? ' Probier jetzt den Endlos-Modus! 🏆' : '');
+    ui.overlayTitle.textContent = state.mode === 'levels' && !state.daily && isLast ? 'Alle Level geschafft!' : 'Geschafft!';
+    ui.overlayText.replaceChildren(iconNode('bolt'), ` ${used} / ${state.map.shots}` +
+      (state.daily ? `  ·  Bestwert ${loadValue(STORAGE_KEY + '.daily.' + state.daily, used)}` : ''));
     ui.overlayNext.hidden = state.mode === 'levels' && (isLast || !!state.daily);
   } else {
-    const alive = aliveEnemies().length;
     const solutions = [...new Set(state.map.solution)];
-    ui.overlayTitle.textContent = 'KEINE ANGRIFFE MEHR';
-    ui.overlayText.textContent = `Es ${alive === 1 ? 'ist noch 1 Gegner' : `sind noch ${alive} Gegner`} übrig. ` +
-      (solutions.length ? `Eine mögliche Lösung: ${solutions.map(s => `${s}  \\(${compileLatex(s).tex}\\)`).join(' und ')}` : '');
+    ui.overlayTitle.textContent = 'Keine Angriffe mehr';
+    ui.overlayText.textContent = solutions.length ? 'Lösung: ' + solutions.map(s => `\\(${compileLatex(s).tex}\\)`).join(' und ') : '';
     ui.overlayNext.hidden = state.mode !== 'custom';
     typeset(ui.overlayText);
   }
-  if (state.mode === 'custom') ui.overlayNext.textContent = '✎ Zum Editor';
+  if (state.mode === 'custom') ui.overlayNext.innerHTML = icon('pencil') + ' Editor';
   ui.overlay.hidden = false;
   (ui.overlayNext.hidden ? ui.overlayRetry : ui.overlayNext).focus();
 }
@@ -2770,7 +2986,7 @@ function updateLevelWarning() {
   const used = new Set(state.map.solution.flatMap(s => compileLatex(s).types || []));
   const blocked = blockedTypes([...used]);
   ui.levelWarning.hidden = blocked.length === 0;
-  ui.levelWarning.textContent = `⚠ Diese Karte ist für ${typeNames(blocked)} gedacht – das ist in den Einstellungen deaktiviert.`;
+  ui.levelWarning.replaceChildren(iconNode('warning'), ` Aus: ${typeNames(blocked)}`);
 }
 
 /* ---------- Einstellungen ---------- */
@@ -2816,7 +3032,7 @@ function settingsChanged() {
 }
 
 function updateWallsToggle() {
-  ui.wallsToggle.textContent = `🧱 Wände: ${settings.endlessWalls ? 'AN' : 'AUS'}`;
+  ui.wallsToggle.replaceChildren(iconNode('wall'), settings.endlessWalls ? ' AN' : ' AUS');
   ui.wallsToggle.classList.toggle('off', !settings.endlessWalls);
   ui.endlessWallsBox.checked = settings.endlessWalls;
 }
@@ -2835,48 +3051,32 @@ function updatePreview() {
   const label = MODE_LABEL[state.inputMode];
   const blocked = result.ok ? blockedTypes(result.types) : [];
 
-  let status = '';
-  let kind = '';
-  if (text !== '' && !result.ok) { status = '✗ ' + result.error; kind = 'error'; }
-  else if (blocked.length) { status = `✗ In den Einstellungen deaktiviert: ${typeNames(blocked)}`; kind = 'error'; }
-  else if (text !== '') {
-    const check = functionTips(result);
-    if (check.error) { status = '✗ ' + check.error; kind = 'error'; }
-    else { status = check.tips.join(' '); kind = 'ok'; }
-  }
-  ui.parseStatus.textContent = status;
-  ui.parseStatus.className = 'parse-status ' + (kind === 'ok' && status ? 'tip' : kind);
+  let error = '';
+  if (text !== '' && !result.ok) error = result.error;
+  else if (blocked.length) error = `Aus: ${typeNames(blocked)}`;
+  else if (text !== '') error = shotError(result);
+  const kind = error ? 'error' : text !== '' ? 'ok' : '';
+  if (error) ui.parseStatus.replaceChildren(iconNode('close'), ' ' + error);
+  else ui.parseStatus.textContent = '';
+  ui.parseStatus.className = 'parse-status ' + kind;
   ui.preview.className = 'preview ' + kind;
 
+  const side = result.ok && result.dir < 0;   // nach links: Pfeil vor der Formel
   if (!result.ok || !mathReady) {
-    ui.preview.textContent = label + (text === '' ? '…' : result.ok ? result.tex : text);
+    ui.preview.textContent = (side ? '← ' : '') + label + (text === '' ? '…' : result.ok ? result.tex : text);
     return;
   }
   try {
-    ui.preview.replaceChildren(MathJax.tex2svg(label + result.tex, { display: true }));
+    ui.preview.replaceChildren(MathJax.tex2svg((side ? '\\leftarrow\\ ' : '') + label + result.tex, { display: true }));
   } catch {
     ui.preview.textContent = label + text;
   }
 }
 
-// Prüft den eingetippten Schuss vorab: Fehler (z. B. bei dir nicht definiert)
-// oder Hinweise (Richtung, Kurve endet sehr früh).
-// Ergebnis: { error } oder { tips: [...] }
-function functionTips(result) {
-  if (!state.map) return { tips: [] };
-  const curve = buildCurve(result.shape, state.player, null, result.dir);
-  if (curve.error) return { error: curve.error };
-  const tips = [];
-  if (curve.ode) tips.push(`${result.dir > 0 ? '→ Schuss nach rechts' : '← Schuss nach links'} (Richtung links neben der Vorschau).`);
-  else tips.push(result.dir > 0
-    ? '→ Schuss nach rechts (für links: Minus direkt vor x, z. B. (-x)/6).'
-    : '← Schuss nach links (Minus direkt vor x).');
-  const arm = curve.arms[0];
-  const width = Math.abs(arm.end.x - arm.points[0].x);
-  if (arm.endReason === 'undefined' && width < 4) {
-    tips.push(`Die Funktion ist schon nach ${formatNumber(width, 1)} Einheiten nicht mehr definiert.`);
-  }
-  return { tips };
+// Kann von hier aus überhaupt geschossen werden (z. B. f bei dir definiert)? Ergebnis: Fehlertext oder ''
+function shotError(result) {
+  if (!state.map || !state.player) return '';
+  return buildCurve(result.shape, state.player, null, result.dir).error || '';
 }
 
 // MathJax wird asynchron geladen; ohne Internet bleibt die Textvorschau
@@ -2896,18 +3096,71 @@ function typeset(element) {
 
 /* ---------- Canvas & Maus ---------- */
 
-// Canvas an die verfügbare Fläche anpassen (gestochen scharf, auch auf HiDPI)
+// Pixel der Oberfläche (--p in style.css): immer eine ganze Zahl n Bildschirmpixel, möglichst
+// nah an 1 CSS-Pixel (bei 150 % also 2, bei 125 % 1 – gerundet im Verhältnis). Ist das Fenster
+// dafür zu klein, wird n kleiner; ist es riesig (z. B. 4K bei 100 %), größer.
+// Die Oberfläche ist in Einheiten von 1,5 · --p gebaut (--u), die Schrift ebenso (pix.S).
+function setPixelScale(dpr) {
+  const lo = Math.max(1, Math.floor(dpr));
+  const hi = Math.max(1, Math.ceil(dpr));
+  let n = dpr / lo <= hi / dpr ? lo : hi;
+  const w = window.innerWidth * dpr;
+  const h = window.innerHeight * dpr;
+  n = Math.min(n, Math.max(1, Math.floor(Math.min(w / 1700, h / 980))));
+  n = Math.max(n, Math.floor(Math.min(w / 1900, h / 1070)));
+  document.documentElement.style.setProperty('--p', n / dpr + 'px');
+  pix.T = n;
+  pix.S = 1.5 * n;
+}
+
+const FRAME = 12;   // Breite des Holzrahmens ums Spielfeld in Oberflächen-Pixeln (--p), siehe .frame in style.css
+
+// Spielfeld an die verfügbare Fläche anpassen – auflösungsfest:
+// Eine Einheit ist U = K · A Bildschirmpixel (K Bildschirmpixel pro Kunst-Pixel, A Kunst-Pixel pro
+// Einheit, A zwischen 7 und 11). Das Canvas hat genau so viele Pixel wie der Bildschirm an dieser
+// Stelle und liegt auf ganzen Bildschirmpixeln – nichts wird vom Browser skaliert oder geglättet.
 function fitCanvas() {
-  const box = ui.stage.getBoundingClientRect();
-  const s = Math.min((box.width - 20) / WIDTH, (box.height - 20) / HEIGHT);   // Platz für Rahmen + Schatten
-  const cssW = Math.max(200, Math.floor(WIDTH * s));
-  const cssH = Math.floor(cssW * HEIGHT / WIDTH);
-  canvas.style.width = cssW + 'px';
-  canvas.style.height = cssH + 'px';
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = Math.round(cssW * dpr);
-  canvas.height = Math.round(cssH * dpr);
-  renderScale = canvas.width / WIDTH;
+  setPixelScale(dpr);
+  // Passt die Kopfzeile nicht in eine Zeile, zeigen die Reiter nur ihre Icons (Name beim Draufzeigen)
+  const topbar = ui.levelSelect.parentElement;
+  const firstTab = ui.levelSelect.firstElementChild;
+  topbar.classList.remove('compact');
+  const logo = topbar.firstElementChild;
+  const wrapped = [...topbar.children].some(el => el.offsetTop > logo.offsetTop + logo.offsetHeight / 2) ||
+    (firstTab && ui.levelSelect.offsetHeight > 1.6 * firstTab.offsetHeight + 12);
+  topbar.classList.toggle('compact', wrapped);
+  const box = ui.stage.getBoundingClientRect();
+  const room = FRAME * pix.T + 6 * pix.T;   // Platz für Holzrahmen und Schatten
+  const maxU = Math.max(7, Math.floor(Math.min((box.width * dpr - 2 * room) / COLS, (box.height * dpr - 2 * room) / ROWS)));
+  let best = { K: 1, A: 7, score: 0 };
+  for (let K = 1; K <= 16; K++) {
+    const A = Math.min(11, Math.floor(maxU / K));
+    if (A < 7) break;
+    const score = K * A * (A >= 8 ? 1 : 0.95);   // A = 7 nur, wenn es deutlich mehr Fläche bringt
+    if (score > best.score) best = { K, A, score };
+  }
+  pix.K = best.K;
+  pix.A = best.A;
+  pix.U = best.K * best.A;
+  canvas.width = COLS * pix.U;
+  canvas.height = ROWS * pix.U;
+  canvas.style.width = canvas.width / dpr + 'px';
+  canvas.style.height = canvas.height / dpr + 'px';
+  // mittig, aber auf ganzen Bildschirmpixeln
+  const left = Math.round(box.left * dpr + (box.width * dpr - canvas.width) / 2) - box.left * dpr;
+  const top = Math.round(box.top * dpr + (box.height * dpr - canvas.height) / 2) - box.top * dpr;
+  canvas.style.left = left / dpr + 'px';
+  canvas.style.top = top / dpr + 'px';
+  // Holzrahmen ringsum, ebenfalls auf ganzen Bildschirmpixeln
+  const F = FRAME * pix.T;
+  Object.assign(ui.frame.style, {
+    left: (left - F) / dpr + 'px', top: (top - F) / dpr + 'px',
+    width: (canvas.width + 2 * F) / dpr + 'px', height: (canvas.height + 2 * F) / dpr + 'px',
+  });
+  ctx.imageSmoothingEnabled = false;
+  background = null;
+  if (state.map) draw();   // sofort neu malen – sonst bliebe das geleerte Canvas bis zum nächsten Bild leer
 }
 
 function onMouseMove(event) {
@@ -2933,6 +3186,7 @@ function init() {
   const $ = id => document.getElementById(id);
   ui = {
     stage: $('stage'),
+    frame: $('frame'),
     sidebar: $('sidebar'),
     playerName: $('player-name'),
     fireBar: $('fire-bar'),
@@ -2954,7 +3208,6 @@ function init() {
     overlayNewmap: $('overlay-newmap'),
     fxMode: $('fx-mode'),
     odeControls: $('ode-controls'),
-    odeDir: $('ode-dir'),
     odeAngle: $('ode-angle'),
     odeAngleBox: $('ode-angle-box'),
     keypad: $('keypad'),
@@ -2975,9 +3228,8 @@ function init() {
     fireBtn: $('fire-btn'),
     message: $('message'),
     enemyCount: $('enemy-count'),
-    shotLabel: $('shot-label'),
+    shotItem: $('shot-item'),
     shotCount: $('shot-count'),
-    shotSub: $('shot-sub'),
     shotPips: $('shot-pips'),
     scoreItem: $('score-item'),
     score: $('score'),
@@ -2986,9 +3238,7 @@ function init() {
     levelNum: $('level-num'),
     levelName: $('level-name'),
     levelTask: $('level-task'),
-    levelHint: $('level-hint'),
     levelWarning: $('level-warning'),
-    hintBox: $('hint-box'),
     tutorialNav: $('tutorial-nav'),
     tutorialNext: $('tutorial-next'),
     tutorialSkip: $('tutorial-skip'),
@@ -3048,7 +3298,6 @@ function init() {
 
   // Eingabe-Modus, Profi-Felder, Mathe-Tasten
   ui.fxMode.addEventListener('change', () => setInputMode(ui.fxMode.value));
-  ui.odeDir.addEventListener('change', updatePreview);
   ui.odeAngle.addEventListener('input', updatePreview);
   ui.keypad.addEventListener('pointerdown', e => { if (e.target.closest('button')) e.preventDefault(); });   // Cursor bleibt im Feld
   ui.keypad.addEventListener('click', e => { const b = e.target.closest('button'); if (b) keypadPress(b); });
@@ -3061,11 +3310,11 @@ function init() {
   $('editor-btn').addEventListener('click', () => { ui.levelDialog.close(); switchMode(() => startEditor()); });
   const loadCode = () => {
     if (loadMapCode($('code-input').value)) ui.levelDialog.close();
-    else ui.codeError.textContent = 'Diesen Code kenne ich nicht. Level-Codes sehen so aus: L3-1A2B3C, eigene Karten beginnen mit K1-.';
+    else ui.codeError.textContent = 'Code unbekannt';
   };
   $('code-load').addEventListener('click', loadCode);
   $('code-input').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); loadCode(); } });
-  $('map-code-copy').addEventListener('click', () => copyText(mapCodeText()).then(() => showMessage('Karten-Code kopiert.', 'good')));
+  $('map-code-copy').addEventListener('click', () => copyText(mapCodeText()).then(() => showMessage('Kopiert', 'good')));
   ui.mapCodeEdit.addEventListener('click', () => startEditor(state.baseMap.code));
 
   // Editor
@@ -3080,16 +3329,16 @@ function init() {
     editorSync();
   });
   $('editor-test').addEventListener('click', editorTest);
-  $('editor-copy').addEventListener('click', () => copyText(encodeMap(state.map.grid, editor.shots)).then(() => showMessage('Karten-Code kopiert – zum Teilen einfügen.', 'good')));
+  $('editor-copy').addEventListener('click', () => copyText(encodeMap(state.map.grid, editor.shots)).then(() => showMessage('Kopiert', 'good')));
   $('editor-clear').addEventListener('click', () => {
-    if (!confirm('Ganze Karte leeren?')) return;
+    if (!confirm('Karte leeren?')) return;
     saveValue(EDITOR_KEY, '');
     startEditor('K1-5-a1500');
   });
   $('editor-load').addEventListener('click', () => {
     const code = $('editor-code').value.trim();
     if (decodeMap(code)) startEditor(code);
-    else ui.editorError.textContent = 'Das ist kein gültiger Karten-Code (er beginnt mit K1-).';
+    else ui.editorError.textContent = 'Code ungültig';
   });
   canvas.addEventListener('pointerdown', event => {
     if (state.mode !== 'editor') return;
@@ -3122,9 +3371,13 @@ function init() {
     toggleTarget(state.mouse);
   });
   window.addEventListener('resize', fitCanvas);
+  new ResizeObserver(fitCanvas).observe(ui.stage);
 
-  // Ist die Pixel-Schrift nachgeladen, den vorgezeichneten Hintergrund neu malen
-  if (document.fonts) document.fonts.ready.then(() => { background = null; });
+  // Ist die Pixel-Schrift geladen, den vorgezeichneten Hintergrund neu malen
+  if (document.fonts) {
+    document.fonts.load(`${TEXT_SIZE}px "Jersey 10"`).then(() => { fontsReady = true; });
+  } else fontsReady = true;
+  hydrateIcons();
   buildSettings();
   buildCatalog();
   mpInit();
